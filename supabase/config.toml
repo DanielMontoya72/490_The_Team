@@ -1,0 +1,208 @@
+project_id = "hjivwsckydccmhjndguq"
+
+[functions.linkedin-oauth-start]
+verify_jwt = false
+
+[functions.linkedin-oauth-callback]
+verify_jwt = false
+
+[functions.fetch-linkedin-connections]
+verify_jwt = true
+
+[functions.send-contact-invitation]
+verify_jwt = true
+
+[functions.users-me]
+verify_jwt = true
+
+[functions.generate-resume-content]
+verify_jwt = true
+
+[functions.auto-archive-jobs]
+verify_jwt = false
+
+[functions.calculate-interview-success]
+verify_jwt = true
+
+[functions.optimize-resume-skills]
+verify_jwt = true
+
+[functions.tailor-resume-experience]
+verify_jwt = true
+
+[functions.export-resume-docx]
+verify_jwt = true
+
+[functions.import-job-from-url]
+verify_jwt = false
+
+[functions.send-password-reset-email]
+verify_jwt = false
+
+[functions.complete-password-reset]
+verify_jwt = false
+
+[functions.validate-resume-content]
+verify_jwt = true
+
+[functions.generate-job-search-recommendations]
+verify_jwt = true
+
+[functions.generate-cover-letter]
+verify_jwt = true
+
+[functions.export-cover-letter-docx]
+verify_jwt = true
+
+[functions.export-cover-letter-pdf]
+verify_jwt = true
+
+[functions.analyze-job-match]
+verify_jwt = true
+
+[functions.generate-company-research]
+verify_jwt = true
+
+[functions.generate-interview-questions]
+verify_jwt = true
+
+[functions.coach-interview-response]
+verify_jwt = true
+
+[functions.generate-mock-interview]
+verify_jwt = true
+
+[functions.github-oauth-callback]
+verify_jwt = false
+
+[functions.analyze-skill-gaps]
+verify_jwt = true
+
+[functions.research-salary]
+verify_jwt = true
+
+[functions.generate-interview-insights]
+verify_jwt = true
+
+[functions.generate-interview-preparation]
+verify_jwt = false
+
+[functions.generate-follow-up-template]
+verify_jwt = false
+
+[functions.finalize-follow-up]
+verify_jwt = false
+
+[functions.generate-negotiation-guidance]
+verify_jwt = false
+
+[functions.analyze-written-response]
+verify_jwt = false
+
+[functions.send-mentor-invitation]
+verify_jwt = true
+
+[functions.generate-mentor-progress-report]
+verify_jwt = true
+
+[functions.generate-technical-challenge]
+verify_jwt = true
+
+[functions.evaluate-coding-solution]
+verify_jwt = true
+
+[functions.generate-referral-request-template]
+verify_jwt = true
+
+[functions.discover-networking-opportunities]
+verify_jwt = true
+
+[functions.send-relationship-message]
+verify_jwt = true
+
+[functions.generate-relationship-suggestions]
+verify_jwt = true
+
+[functions.calculate-relationship-health]
+verify_jwt = true
+
+[functions.generate-relationship-message-template]
+verify_jwt = true
+
+[functions.suggest-industry-news]
+verify_jwt = true
+
+[functions.generate-networking-event-message]
+verify_jwt = true
+
+[functions.send-networking-event-email]
+verify_jwt = true
+
+[functions.accept-mentor-invitation]
+verify_jwt = false
+
+[functions.send-mentor-message-email]
+verify_jwt = true
+
+[functions.process-mentor-email-reply]
+verify_jwt = false
+
+[functions.generate-reference-request-template]
+verify_jwt = true
+
+[functions.send-appreciation-email]
+verify_jwt = true
+
+[functions.send-reference-request-email]
+verify_jwt = true
+
+[functions.handle-reference-response]
+verify_jwt = false
+
+[functions.generate-reference-preparation]
+verify_jwt = true
+
+[functions.send-reference-preparation]
+verify_jwt = true
+
+[functions.analyze-application-success]
+verify_jwt = true
+
+[functions.fetch-bls-salary]
+verify_jwt = true
+
+[functions.gmail-oauth-start]
+verify_jwt = true
+
+[functions.gmail-oauth-callback]
+verify_jwt = false
+
+[functions.scan-gmail-emails]
+verify_jwt = true
+
+[functions.github-oauth-start]
+verify_jwt = true
+
+[functions.sync-github-repos]
+verify_jwt = true
+
+[functions.generate-smart-follow-up]
+verify_jwt = true
+
+[functions.analyze-application-quality]
+verify_jwt = true
+
+[functions.analyze-job-competitiveness]
+verify_jwt = true
+
+[functions.analyze-application-timing]
+verify_jwt = true
+
+[functions.sync-skill-platform]
+verify_jwt = true
+
+[functions.track-api-usage]
+verify_jwt = false
+
+[functions.generate-api-weekly-report]
+verify_jwt = true

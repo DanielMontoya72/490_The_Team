@@ -1,0 +1,852 @@
+@import "react-day-picker/style.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Brand Identity Design System
+   All colors MUST be HSL format.
+   
+   Color Palette:
+   - Baby powder: #FFFDF8 (45 100% 98%)
+   - Black: #000000 (0 0% 0%)
+   - Amber/Yellow: #FCBD16 (43 97% 54%)
+   - Violet: #7C2ADF (271 69% 52%)
+   - Steel pink: #D24BB9 (317 60% 56%)
+   
+   Colorblind Palette:
+   - Orange: #FF5800 (20 100% 50%)
+   - Dodger blue: #1E90FF (210 100% 56%)
+*/
+
+@layer base {
+  /* Light Mode - White background, black text, yellow accents */
+  :root {
+    --background: 45 100% 98%; /* Baby powder #FFFDF8 */
+    --foreground: 0 0% 0%; /* Black #000000 */
+
+    --card: 0 0% 100%; /* Pure white for cards */
+    --card-foreground: 0 0% 0%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 0%;
+
+    --primary: 43 97% 54%; /* Amber/Yellow #FCBD16 */
+    --primary-foreground: 0 0% 0%; /* Black text on yellow */
+
+    --secondary: 271 69% 52%; /* Violet #7C2ADF */
+    --secondary-foreground: 0 0% 100%; /* White text on violet */
+
+    --accent: 317 60% 56%; /* Steel pink #D24BB9 */
+    --accent-foreground: 0 0% 100%; /* White text on pink */
+
+    --muted: 45 30% 95%; /* Light muted version of baby powder */
+    --muted-foreground: 0 0% 40%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 90%;
+    --input: 0 0% 95%;
+    --ring: 43 97% 54%; /* Yellow ring */
+
+    --radius: 0.5rem;
+
+    --sidebar-background: 45 100% 98%;
+    --sidebar-foreground: 0 0% 0%;
+    --sidebar-primary: 43 97% 54%;
+    --sidebar-primary-foreground: 0 0% 0%;
+    --sidebar-accent: 271 69% 52%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 0 0% 90%;
+    --sidebar-ring: 43 97% 54%;
+  }
+
+  /* Dark Mode - Dark background, white text, yellow accents */
+  .dark {
+    --background: 0 0% 10%; /* Dark grey, not pure black */
+    --foreground: 0 0% 100%; /* White text */
+
+    --card: 0 0% 12%; /* Slightly lighter than background */
+    --card-foreground: 0 0% 100%;
+
+    --popover: 0 0% 12%;
+    --popover-foreground: 0 0% 100%;
+
+    --primary: 43 97% 54%; /* Amber/Yellow #FCBD16 */
+    --primary-foreground: 0 0% 0%; /* Black text on yellow */
+
+    --secondary: 271 69% 52%; /* Violet #7C2ADF */
+    --secondary-foreground: 0 0% 100%;
+
+    --accent: 317 60% 56%; /* Steel pink #D24BB9 */
+    --accent-foreground: 0 0% 100%;
+
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 70%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 20%;
+    --input: 0 0% 15%;
+    --ring: 43 97% 54%;
+
+    --sidebar-background: 0 0% 10%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 43 97% 54%;
+    --sidebar-primary-foreground: 0 0% 0%;
+    --sidebar-accent: 271 69% 52%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 0 0% 20%;
+    --sidebar-ring: 43 97% 54%;
+  }
+
+  /* Colorful Mode - Light pink/yellow background, fun accents */
+  .theme-colorful {
+    --background: 317 100% 95%; /* Light pink tint */
+    --foreground: 0 0% 0%;
+
+    --card: 45 100% 96%; /* Light yellow tint for cards */
+    --card-foreground: 0 0% 0%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 0%;
+
+    --primary: 43 97% 54%; /* Yellow logo */
+    --primary-foreground: 0 0% 0%;
+
+    --secondary: 317 60% 56%; /* Steel pink - more prominent */
+    --secondary-foreground: 0 0% 100%;
+
+    --accent: 271 69% 52%; /* Violet */
+    --accent-foreground: 0 0% 100%;
+
+    --muted: 317 50% 90%;
+    --muted-foreground: 0 0% 30%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 317 40% 85%;
+    --input: 317 40% 92%;
+    --ring: 43 97% 54%;
+
+    --radius: 0.5rem;
+  }
+
+  /* Colorblind Mode - Orange and blue for accessibility */
+  .colorblind {
+    --background: 0 0% 100%; /* Pure white #FFFFFF */
+    --foreground: 0 0% 0%; /* Pure black #000000 */
+
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 0%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 0%;
+
+    --primary: 20 100% 50%; /* Orange #FF5800 */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 210 100% 56%; /* Dodger blue #1E90FF */
+    --secondary-foreground: 0 0% 100%;
+
+    --accent: 210 100% 56%;
+    --accent-foreground: 0 0% 100%;
+
+    --muted: 0 0% 95%;
+    --muted-foreground: 0 0% 40%;
+
+    --destructive: 20 100% 50%; /* Use orange for destructive actions in colorblind mode */
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 85%;
+    --input: 0 0% 92%;
+    --ring: 20 100% 50%;
+
+    --radius: 0.5rem;
+
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 0 0% 0%;
+    --sidebar-primary: 20 100% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 100% 56%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 0 0% 85%;
+    --sidebar-ring: 20 100% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    @apply overflow-x-hidden;
+  }
+
+  body {
+    @apply bg-background text-foreground font-forma overflow-x-hidden;
+    width: 100%;
+    max-width: 100vw;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-rodchenko;
+  }
+}
+
+@layer utilities {
+  /* Responsive text utilities */
+  .text-responsive-sm {
+    @apply text-sm md:text-base;
+  }
+  
+  .text-responsive-base {
+    @apply text-base md:text-lg;
+  }
+  
+  .text-responsive-lg {
+    @apply text-lg md:text-xl lg:text-2xl;
+  }
+
+  /* Touch-friendly sizing */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px];
+  }
+
+  /* Container utilities */
+  .container-narrow {
+    @apply max-w-4xl mx-auto px-4;
+  }
+
+  .container-wide {
+    @apply max-w-7xl mx-auto px-4;
+  }
+
+  /* Text size utilities remain as they were for the different size options */
+
+  /* Direct text size overrides - more reliable approach */
+
+  /* Apply text size overrides to all Tailwind text classes */
+  .text-size-small .text-xs { font-size: 16px !important; }
+  .text-size-small .text-sm { font-size: 18px !important; }
+  .text-size-small .text-base { font-size: 20px !important; }
+  .text-size-small .text-lg { font-size: 24px !important; }
+  .text-size-small .text-xl { font-size: 28px !important; }
+  .text-size-small .text-2xl { font-size: 32px !important; }
+  .text-size-small .text-3xl { font-size: 36px !important; }
+  .text-size-small .text-4xl { font-size: 42px !important; }
+  .text-size-small .text-5xl { font-size: 52px !important; }
+
+  .text-size-medium .text-xs { font-size: 18px !important; }
+  .text-size-medium .text-sm { font-size: 20px !important; }
+  .text-size-medium .text-base { font-size: 24px !important; }
+  .text-size-medium .text-lg { font-size: 28px !important; }
+  .text-size-medium .text-xl { font-size: 32px !important; }
+  .text-size-medium .text-2xl { font-size: 36px !important; }
+  .text-size-medium .text-3xl { font-size: 42px !important; }
+  .text-size-medium .text-4xl { font-size: 48px !important; }
+  .text-size-medium .text-5xl { font-size: 60px !important; }
+
+  .text-size-large .text-xs { font-size: 18px !important; }
+  .text-size-large .text-sm { font-size: 20px !important; }
+  .text-size-large .text-base { font-size: 22px !important; }
+  .text-size-large .text-lg { font-size: 24px !important; }
+  .text-size-large .text-xl { font-size: 26px !important; }
+  .text-size-large .text-2xl { font-size: 28px !important; }
+  .text-size-large .text-3xl { font-size: 32px !important; }
+  .text-size-large .text-4xl { font-size: 36px !important; }
+  .text-size-large .text-5xl { font-size: 40px !important; }
+
+  .text-size-extra-large .text-sm { font-size: 22px !important; }
+  .text-size-extra-large .text-base { font-size: 24px !important; }
+  .text-size-extra-large .text-lg { font-size: 26px !important; }
+  .text-size-extra-large .text-xl { font-size: 28px !important; }
+  .text-size-extra-large .text-2xl { font-size: 32px !important; }
+  .text-size-extra-large .text-3xl { font-size: 36px !important; }
+  .text-size-extra-large .text-4xl { font-size: 40px !important; }
+  .text-size-extra-large .text-5xl { font-size: 44px !important; }
+
+  /* Resume preview should use natural Tailwind sizes, not accessibility overrides */
+  /* This allows section-specific font sizing to work correctly (12pt, 14pt, 16pt) */
+  .resume-preview-content .text-xs { font-size: 0.75rem !important; } /* 12px */
+  .resume-preview-content .text-sm { font-size: 0.875rem !important; } /* 14px */
+  .resume-preview-content .text-base { font-size: 1rem !important; } /* 16px */
+  .resume-preview-content .text-lg { font-size: 1.125rem !important; } /* 18px */
+  .resume-preview-content .text-xl { font-size: 1.25rem !important; } /* 20px */
+  .resume-preview-content .text-2xl { font-size: 1.5rem !important; } /* 24px */
+  .resume-preview-content .text-3xl { font-size: 1.875rem !important; } /* 30px */
+  .resume-preview-content .text-4xl { font-size: 2.25rem !important; } /* 36px */
+  .resume-preview-content .text-5xl { font-size: 3rem !important; } /* 48px */
+
+  /* Also apply to elements without specific text classes */
+  .text-size-small { font-size: 20px; }
+  .text-size-small button, .text-size-small input, .text-size-small label, .text-size-small p, .text-size-small span, .text-size-small div:not([class*="text-"]), .text-size-small textarea, .text-size-small .line-clamp-1, .text-size-small h3, .text-size-small h4, .text-size-small h5 { 
+    font-size: 20px !important; 
+    word-spacing: 0.1em !important;
+    letter-spacing: 0.01em !important;
+  }
+
+  .text-size-medium { font-size: 24px; }
+  .text-size-medium button, .text-size-medium input, .text-size-medium label, .text-size-medium p, .text-size-medium span, .text-size-medium div:not([class*="text-"]), .text-size-medium textarea, .text-size-medium .line-clamp-1, .text-size-medium h3, .text-size-medium h4, .text-size-medium h5 { 
+    font-size: 24px !important; 
+    word-spacing: 0.125em !important;
+    letter-spacing: 0.015em !important;
+  }
+
+  .text-size-large { font-size: 28px; }
+  .text-size-large button, .text-size-large input, .text-size-large label, .text-size-large p, .text-size-large span, .text-size-large div:not([class*="text-"]), .text-size-large textarea, .text-size-large .line-clamp-1, .text-size-large h3, .text-size-large h4, .text-size-large h5 { 
+    font-size: 28px !important; 
+    word-spacing: 0.15em !important;
+    letter-spacing: 0.02em !important;
+  }
+
+  .text-size-extra-large { font-size: 32px; }
+  .text-size-extra-large button, .text-size-extra-large input, .text-size-extra-large label, .text-size-extra-large p, .text-size-extra-large span, .text-size-extra-large div:not([class*="text-"]), .text-size-extra-large textarea, .text-size-extra-large .line-clamp-1, .text-size-extra-large h3, .text-size-extra-large h4, .text-size-extra-large h5 { 
+    font-size: 32px !important; 
+    word-spacing: 0.175em !important;
+    letter-spacing: 0.025em !important;
+  }
+
+  /* Specific overrides for job card elements and descriptions */
+  .text-size-small .font-bold { 
+    font-size: 22px !important; 
+    word-spacing: 0.1em !important;
+    letter-spacing: 0.01em !important;
+  }
+  .text-size-medium .font-bold { 
+    font-size: 26px !important; 
+    word-spacing: 0.125em !important;
+    letter-spacing: 0.015em !important;
+  }
+  .text-size-large .font-bold { 
+    font-size: 30px !important; 
+    word-spacing: 0.15em !important;
+    letter-spacing: 0.02em !important;
+  }
+  .text-size-extra-large .font-bold { 
+    font-size: 34px !important; 
+    word-spacing: 0.175em !important;
+    letter-spacing: 0.025em !important;
+  }
+
+  /* Override any remaining Tailwind text size classes that might be missed - but preserve the specific ones we set above */
+  .text-size-small *:not(.text-sm):not(.text-base):not(.text-lg):not(.text-xl):not(.text-2xl):not(.text-3xl):not(.text-4xl):not(.text-5xl) { 
+    font-size: 20px !important; 
+    word-spacing: 0.1em !important;
+    letter-spacing: 0.01em !important;
+  }
+  .text-size-medium *:not(.text-sm):not(.text-base):not(.text-lg):not(.text-xl):not(.text-2xl):not(.text-3xl):not(.text-4xl):not(.text-5xl) { 
+    font-size: 24px !important; 
+    word-spacing: 0.125em !important;
+    letter-spacing: 0.015em !important;
+  }
+  .text-size-large *:not(.text-sm):not(.text-base):not(.text-lg):not(.text-xl):not(.text-2xl):not(.text-3xl):not(.text-4xl):not(.text-5xl) { 
+    font-size: 28px !important; 
+    word-spacing: 0.15em !important;
+    letter-spacing: 0.02em !important;
+  }
+  .text-size-extra-large *:not(.text-sm):not(.text-base):not(.text-lg):not(.text-xl):not(.text-2xl):not(.text-3xl):not(.text-4xl):not(.text-5xl) { 
+    font-size: 32px !important; 
+    word-spacing: 0.175em !important;
+    letter-spacing: 0.025em !important;
+  }
+
+  /* Responsive container and layout adjustments for text size changes */
+  .text-size-small, .text-size-medium, .text-size-large, .text-size-extra-large {
+    /* Make all containers responsive to content */
+    * {
+      box-sizing: border-box;
+      line-height: 1.6 !important; /* Improved line height for better readability */
+    }
+
+    /* Prevent text merging by adding proper margins and spacing */
+    p, span, div, label, button, input, textarea, h1, h2, h3, h4, h5, h6 {
+      margin-top: 0.25em !important;
+      margin-bottom: 0.25em !important;
+      display: block !important;
+    }
+
+    /* Inline elements need horizontal spacing */
+    span, label, button {
+      display: inline-block !important;
+      margin-right: 0.25em !important;
+    }
+
+    /* List items need vertical spacing */
+    li {
+      margin-bottom: 0.5em !important;
+      line-height: 1.6 !important;
+    }
+
+    /* Text inside flex and grid containers */
+    .flex *, .grid * {
+      margin: 0.125em !important;
+    }
+
+    /* Cards and containers should expand with content */
+    .card, [class*="Card"], .bg-card {
+      min-height: auto !important;
+      height: auto !important;
+      width: auto !important;
+      min-width: auto !important;
+      padding: 1.5em !important;
+    }
+    
+    /* Buttons should expand with text */
+    button, .btn, [class*="Button"] {
+      min-height: auto !important;
+      height: auto !important;
+      padding: 0.75em 1.5em !important;
+      white-space: normal !important;
+      word-wrap: break-word !important;
+      border-radius: 0.5em !important;
+    }
+    
+    /* Form inputs should expand appropriately */
+    input, textarea, select {
+      min-height: auto !important;
+      height: auto !important;
+      padding: 0.75em !important;
+      border-radius: 0.375em !important;
+    }
+    
+    /* Grid and flex containers should be responsive */
+    .grid, [class*="grid"], .flex, [class*="flex"] {
+      gap: 1em !important;
+      align-items: stretch !important;
+    }
+    
+    /* Navigation and header elements */
+    nav, header, [class*="Nav"], [class*="Header"] {
+      min-height: auto !important;
+      height: auto !important;
+      padding: 1em !important;
+    }
+    
+    /* Dialog and modal containers */
+    .dialog, [class*="Dialog"], .modal, [class*="Modal"], [role="dialog"] {
+      width: auto !important;
+      min-width: auto !important;
+      max-width: 95vw !important;
+      height: auto !important;
+      min-height: auto !important;
+      padding: 1.5em !important;
+    }
+    
+    /* List and menu items */
+    li, [role="menuitem"], [role="option"] {
+      min-height: auto !important;
+      height: auto !important;
+      padding: 0.5em 1em !important;
+    }
+    
+    /* Badge and tag elements */
+    .badge, [class*="Badge"], .tag, [class*="Tag"] {
+      padding: 0.25em 0.75em !important;
+      min-height: auto !important;
+      height: auto !important;
+      white-space: nowrap;
+      border-radius: 0.25em !important;
+    }
+    
+    /* Tables should expand with content */
+    table, th, td {
+      height: auto !important;
+      min-height: auto !important;
+      padding: 0.75em !important;
+    }
+    
+    /* Tooltips and popovers */
+    .tooltip, [class*="Tooltip"], .popover, [class*="Popover"] {
+      width: auto !important;
+      min-width: auto !important;
+      max-width: 300px !important;
+      padding: 0.75em !important;
+      border-radius: 0.5em !important;
+    }
+
+    /* Job cards and specific components */
+    .job-card, [class*="JobCard"] {
+      padding: 1.5em !important;
+      gap: 1em !important;
+    }
+
+    /* Statistics cards - small cards under job application statistics */
+    .grid .card, .grid [class*="Card"] {
+      min-height: auto !important;
+      height: auto !important;
+      padding: 1em !important;
+      display: flex !important;
+      align-items: center !important;
+    }
+
+    /* Statistics card content */
+    .card .flex, [class*="Card"] .flex {
+      gap: 0.75em !important;
+      align-items: center !important;
+      width: 100% !important;
+    }
+
+    /* Statistics card icon containers */
+    .card .p-2, [class*="Card"] .p-2 {
+      padding: 0.5em !important;
+      border-radius: 0.5em !important;
+      flex-shrink: 0 !important;
+    }
+
+    /* Statistics card text containers */
+    .card div:last-child, [class*="Card"] div:last-child {
+      min-width: 0 !important;
+      flex: 1 !important;
+    }
+
+    /* Statistics card values */
+    .card .text-2xl, [class*="Card"] .text-2xl {
+      font-size: 1.25em !important;
+      line-height: 1.2 !important;
+      font-weight: bold !important;
+      margin: 0 !important;
+    }
+
+    /* Statistics card labels */
+    .card .text-xs, [class*="Card"] .text-xs {
+      font-size: 0.75em !important;
+      line-height: 1.2 !important;
+      margin: 0 !important;
+      white-space: nowrap !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+    }
+
+    /* Icon sizing should scale with text */
+    svg, .icon, [class*="Icon"] {
+      width: 1.2em !important;
+      height: 1.2em !important;
+    }
+  }
+
+  /* Specific adjustments for each text size */
+  .text-size-large, .text-size-extra-large {
+    /* Larger text needs more spacing */
+    .grid, [class*="grid"], .flex, [class*="flex"] {
+      gap: 1.25em !important;
+    }
+    
+    button, .btn, [class*="Button"] {
+      padding: 1em 2em !important;
+    }
+    
+    input, textarea, select {
+      padding: 1em !important;
+    }
+    
+    /* Dialog and modal containers need more space */
+    .dialog, [class*="Dialog"], .modal, [class*="Modal"] {
+      padding: 2em !important;
+    }
+  }
+
+  .text-size-extra-large {
+    /* Extra large text needs even more spacing */
+    .grid, [class*="grid"], .flex, [class*="flex"] {
+      gap: 1.5em !important;
+    }
+    
+    button, .btn, [class*="Button"] {
+      padding: 1.25em 2.5em !important;
+    }
+    
+    /* Navigation needs more padding */
+    nav, header, [class*="Nav"], [class*="Header"] {
+      padding: 1.5em !important;
+    }
+  }
+
+  /* Large text size specific adjustments for statistics cards */
+  .text-size-large .grid .card, 
+  .text-size-large .grid [class*="Card"] {
+    padding: 1.25em !important;
+  }
+
+  .text-size-large .card .flex, 
+  .text-size-large [class*="Card"] .flex {
+    gap: 1em !important;
+  }
+
+  .text-size-large .card .p-2, 
+  .text-size-large [class*="Card"] .p-2 {
+    padding: 0.75em !important;
+  }
+
+  /* Enhanced spacing for large text to prevent merging */
+  .text-size-medium {
+    p, span, div, label, button, input, textarea, h1, h2, h3, h4, h5, h6 {
+      margin-top: 0.3em !important;
+      margin-bottom: 0.3em !important;
+    }
+
+    span, label, button {
+      margin-right: 0.3em !important;
+    }
+
+    li {
+      margin-bottom: 0.6em !important;
+    }
+
+    .flex *, .grid * {
+      margin: 0.2em !important;
+    }
+  }
+
+  .text-size-large {
+    p, span, div, label, button, input, textarea, h1, h2, h3, h4, h5, h6 {
+      margin-top: 0.375em !important;
+      margin-bottom: 0.375em !important;
+    }
+
+    span, label, button {
+      margin-right: 0.375em !important;
+    }
+
+    li {
+      margin-bottom: 0.75em !important;
+    }
+
+    .flex *, .grid * {
+      margin: 0.25em !important;
+    }
+  }
+
+  .text-size-extra-large .grid .card, 
+  .text-size-extra-large .grid [class*="Card"] {
+    padding: 1.75em !important;
+    min-height: auto !important;
+    height: auto !important;
+  }
+
+  .text-size-extra-large .card .flex, 
+  .text-size-extra-large [class*="Card"] .flex {
+    gap: 1.5em !important;
+  }
+
+  .text-size-extra-large .card .p-2, 
+  .text-size-extra-large [class*="Card"] .p-2 {
+    padding: 1.25em !important;
+  }
+
+  /* Maximum spacing for extra large text to prevent merging */
+  .text-size-extra-large {
+    p, span, div, label, button, input, textarea, h1, h2, h3, h4, h5, h6 {
+      margin-top: 0.5em !important;
+      margin-bottom: 0.5em !important;
+    }
+
+    span, label, button {
+      margin-right: 0.5em !important;
+    }
+
+    li {
+      margin-bottom: 1em !important;
+    }
+
+    .flex *, .grid * {
+      margin: 0.375em !important;
+    }
+
+    /* Additional spacing for text elements that commonly merge */
+    .text-xs, .text-sm, .text-base, .text-lg, .text-xl, .text-2xl {
+      margin: 0.25em 0.125em !important;
+      padding: 0.125em !important;
+    }
+  }
+
+  /* Grid layout adjustments for extra large text */
+  .text-size-extra-large .grid-cols-7 {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)) !important;
+  }
+
+  .text-size-extra-large .grid-cols-3 {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) !important;
+  }
+
+  .text-size-extra-large .grid-cols-2 {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
+  }
+
+  /* Enhanced responsive wrapping for all cards and containers */
+  .text-size-small, .text-size-medium, .text-size-large, .text-size-extra-large {
+    /* Ensure all page containers are flexible */
+    .container, [class*="container"] {
+      width: 100% !important;
+      max-width: none !important;
+      padding: 1em !important;
+    }
+
+    /* All divs and sections should be flexible */
+    div, section, article, main, aside {
+      width: auto !important;
+      min-width: 0 !important;
+      max-width: 100% !important;
+      overflow-wrap: break-word !important;
+      word-wrap: break-word !important;
+      box-sizing: border-box !important;
+    }
+
+    /* Card-like containers need extra flexibility */
+    .card, [class*="Card"], .bg-card, .border, [class*="rounded"] {
+      width: auto !important;
+      min-width: 0 !important;
+      max-width: 100% !important;
+      height: auto !important;
+      min-height: auto !important;
+      flex: 1 1 auto !important;
+      overflow: visible !important;
+    }
+
+    /* Grid containers should be fully responsive */
+    .grid, [class*="grid"] {
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) !important;
+      width: 100% !important;
+      gap: 1em !important;
+    }
+
+    /* Flex containers should wrap and be flexible */
+    .flex, [class*="flex"] {
+      flex-wrap: wrap !important;
+      width: 100% !important;
+      gap: 1em !important;
+    }
+
+    /* Tables should be responsive */
+    table, .table {
+      width: 100% !important;
+      table-layout: auto !important;
+      overflow-x: auto !important;
+    }
+
+    th, td {
+      width: auto !important;
+      min-width: auto !important;
+      padding: 0.75em !important;
+    }
+  }
+
+  /* Extra responsive adjustments for larger text sizes */
+  .text-size-large, .text-size-extra-large {
+    .grid, [class*="grid"] {
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)) !important;
+      gap: 1.5em !important;
+    }
+
+    .flex, [class*="flex"] {
+      gap: 1.5em !important;
+    }
+
+    .container, [class*="container"] {
+      padding: 1.5em !important;
+    }
+  }
+
+  /* Make settings page cards wider */
+  .container .max-w-2xl {
+    max-width: 4xl !important;
+  }
+
+  /* Alternative targeting for settings cards */
+  main .max-w-2xl {
+    max-width: 56rem !important; /* 4xl equivalent */
+  }
+
+  /* Ensure theme and text size selector cards are wider */
+  [class*="ThemeSelector"],
+  [class*="TextSizeSelector"] {
+    max-width: 56rem !important;
+    width: 100% !important;
+  }
+
+  /* Make all cards in settings wider */
+  .container .mx-auto.max-w-2xl,
+  main .mx-auto.max-w-2xl {
+    max-width: 60rem !important; /* Even wider for settings */
+  }
+
+  /* Fix job application statistics cards for large text */
+  .text-size-large .grid .card,
+  .text-size-large .grid [class*="Card"] {
+    height: auto !important;
+    min-height: auto !important;
+    padding: 1rem !important;
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: flex-start !important;
+    align-items: flex-start !important;
+    overflow: visible !important;
+    white-space: normal !important;
+    word-wrap: break-word !important;
+    gap: 1rem !important;
+  }
+
+  /* Keep icon and text side by side */
+  .text-size-large .card .flex,
+  .text-size-large [class*="Card"] .flex {
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 1rem !important;
+    width: 100% !important;
+    justify-content: flex-start !important;
+  }
+
+  /* Icon container stays on left */
+  .text-size-large .card .p-2,
+  .text-size-large [class*="Card"] .p-2 {
+    padding: 1rem !important;
+    border-radius: 0.75rem !important;
+    flex-shrink: 0 !important;
+    align-self: flex-start !important;
+  }
+
+  /* Text content container */
+  .text-size-large .card div:last-child,
+  .text-size-large [class*="Card"] div:last-child {
+    flex: 1 !important;
+    min-width: 0 !important;
+    text-align: left !important;
+  }
+
+  /* Ensure statistics card text wraps properly on the right */
+  .text-size-large .card p,
+  .text-size-large .card span,
+  .text-size-large [class*="Card"] p,
+  .text-size-large [class*="Card"] span,
+  .text-size-large .card .text-2xl,
+  .text-size-large .card .text-xs,
+  .text-size-large [class*="Card"] .text-2xl,
+  .text-size-large [class*="Card"] .text-xs {
+    white-space: normal !important;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    hyphens: auto !important;
+    text-align: left !important;
+    max-width: 100% !important;
+    line-height: 1.4 !important;
+    margin: 0.25rem 0 !important;
+  }
+
+  /* Make statistics grid more responsive for large text */
+  .text-size-large .grid-cols-7 {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) !important;
+    gap: 1rem !important;
+  }
+
+  /* Icon containers in statistics cards */
+  .text-size-large .card .p-2,
+  .text-size-large [class*="Card"] .p-2 {
+    padding: 1rem !important;
+    border-radius: 0.75rem !important;
+    flex-shrink: 0 !important;
+  }
+}

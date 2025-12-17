@@ -45,7 +45,7 @@ serve(async (req) => {
     // Format message as HTML
     const htmlContent = `
       <!DOCTYPE html>
-      <html>
+      <html lang="en">
       <head>
         <meta charset="utf-8">
         <style>

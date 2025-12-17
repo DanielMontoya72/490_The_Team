@@ -12,6 +12,143 @@ const JOB_RELATED_KEYWORDS = [
   "screening", "assessment", "onboarding", "rejection", "unfortunately"
 ];
 
+// Platform detection patterns (inline to avoid cross-function imports)
+const PLATFORM_PATTERNS = {
+  linkedin: {
+    fromPatterns: [/@linkedin\.com$/i, /linkedin/i, /jobs-noreply@linkedin/i],
+    subjectPatterns: [/your application/i, /applied to/i, /job alert/i, /congratulations/i, /was sent to/i, /application for/i],
+    extractors: {
+      // LinkedIn body format:
+      // "CT Technologist\nJobot Consulting · New York, NY (On-site)"
+      // Subject format:
+      // "Matthew, your application was sent to Jobot Consulting"
+      jobTitle: [
+        /^([A-Za-z][A-Za-z\s/\-]+?)\n[A-Z]/m, // Job title on its own line followed by company
+        /Application for ([^<\n]+?)(?:\s+at|\s*<|$)/i,
+        /Your Application for ([^<\n]+?)(?:\s+at|\s*<|$)/i,
+        /applied (?:for|to) (?:the )?([^<\n]+?)(?:\s+at|\s+position|\s+role|\s*<|$)/i,
+      ],
+      company: [
+        /(?:was sent to|sent to) ([A-Za-z0-9][^<\n.!?,]+?)(?:\s*<|\.|!|,|$)/i, // "was sent to Jobot Consulting"
+        /([A-Z][A-Za-z0-9\s&\-.]+?)\s*[·•]\s*[A-Za-z]/i, // "Jobot Consulting · New York, NY (On-site)"
+        /(?:at|to) ([A-Z][^.!?,\n]+?)(?:\.|,|!|\s+Location|\s+Your|\s*$)/i,
+      ],
+      location: [
+        /[·•]\s*([A-Za-z][A-Za-z\s,]+(?:\([^)]+\))?)/i, // "· New York, NY (On-site)"
+        /(?:Location|in)[:\s]+([^<\n.!?,]+)/i,
+      ],
+    }
+  },
+  indeed: {
+    fromPatterns: [/@indeed\.com$/i, /indeed/i, /no-reply@indeed/i],
+    subjectPatterns: [/application/i, /applied/i, /interview/i, /submitted/i],
+    extractors: {
+      jobTitle: [
+        /(?:Application Submitted|Applied)[:\s]+([^<\n]+?)\s+at\s+/i,
+        /applied (?:for|to) ([^<\n]+?)\s+at\s+/i,
+      ],
+      company: [
+        /at ([A-Za-z0-9][^<\n.!?,]+?)(?:\s*<|\.|!|,|\s+Location|$)/i,
+      ],
+      location: [
+        /Location[:\s]+([^<\n.!?,]+)/i,
+      ],
+    }
+  },
+  glassdoor: {
+    fromPatterns: [/@glassdoor\.com$/i, /glassdoor/i, /notifications@glassdoor/i],
+    subjectPatterns: [/application/i, /applied/i, /job/i, /confirmation/i],
+    extractors: {
+      jobTitle: [
+        /applied for (?:position[:\s]*)?([^<\n]+?)\s+at\s+/i,
+        /position[:\s]+([^<\n]+?)\s+at\s+/i,
+      ],
+      company: [
+        /at ([A-Za-z0-9][^<\n.!?,]+?)(?:\s*<|\.|!|,|\s+Location|$)/i,
+      ],
+      location: [
+        /Location[:\s]+([^<\n.!?,]+)/i,
+      ],
+    }
+  },
+  ziprecruiter: {
+    fromPatterns: [/@ziprecruiter\.com$/i, /ziprecruiter/i],
+    subjectPatterns: [/application/i, /applied/i],
+    extractors: {
+      jobTitle: [
+        /applied (?:for|to) ([^<\n]+?)\s+at\s+/i,
+      ],
+      company: [
+        /at ([A-Za-z0-9][^<\n.!?,]+?)(?:\s*<|\.|!|,|\s+Location|$)/i,
+      ],
+      location: [
+        /Location[:\s]+([^<\n.!?,]+)/i,
+      ],
+    }
+  }
+};
+
+function detectPlatform(fromEmail: string, subject: string): string | null {
+  for (const [platform, patterns] of Object.entries(PLATFORM_PATTERNS)) {
+    const fromMatch = patterns.fromPatterns.some(p => p.test(fromEmail));
+    const subjectMatch = patterns.subjectPatterns.some(p => p.test(subject));
+    if (fromMatch || subjectMatch) {
+      return platform;
+    }
+  }
+  return null;
+}
+
+// AI-powered job extraction using Gemini AI
+async function extractJobDetailsWithAI(
+  platform: string, 
+  subject: string, 
+  body: string, 
+  fromEmail: string
+): Promise<{ jobTitle: string | null; company: string | null; location: string | null }> {
+  try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    
+    console.log(`[extractJobDetailsWithAI] Calling AI extraction for platform: ${platform}`);
+    
+    const response = await fetch(`${supabaseUrl}/functions/v1/extract-job-from-email`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+      },
+      body: JSON.stringify({
+        subject,
+        body,
+        fromEmail,
+        platform
+      }),
+    });
+
+    if (!response.ok) {
+      console.error(`[extractJobDetailsWithAI] AI extraction failed with status: ${response.status}`);
+      return { jobTitle: null, company: null, location: null };
+    }
+
+    const result = await response.json();
+    
+    if (result.success) {
+      console.log(`[extractJobDetailsWithAI] AI extracted: jobTitle=${result.jobTitle}, company=${result.companyName}, location=${result.location}, confidence=${result.confidence}`);
+      return {
+        jobTitle: result.jobTitle || null,
+        company: result.companyName || null,
+        location: result.location || null
+      };
+    }
+    
+    console.error(`[extractJobDetailsWithAI] AI extraction returned error:`, result.error);
+    return { jobTitle: null, company: null, location: null };
+  } catch (error) {
+    console.error(`[extractJobDetailsWithAI] Error calling AI extraction:`, error);
+    return { jobTitle: null, company: null, location: null };
+  }
+}
+
 function classifyEmail(subject: string, snippet: string): { type: string; suggestedStatus: string | null } {
   const text = `${subject} ${snippet}`.toLowerCase();
   
@@ -35,6 +172,118 @@ function classifyEmail(subject: string, snippet: string): { type: string; sugges
   }
   
   return { type: "other", suggestedStatus: null };
+}
+
+async function autoImportPlatformEmail(
+  supabase: any,
+  userId: string,
+  platform: string,
+  details: { jobTitle: string | null; company: string | null; location: string | null },
+  emailData: { subject: string; fromEmail: string; snippet: string },
+  autoImportEnabled: boolean
+) {
+  // Allow partial data - at minimum need company OR jobTitle (will fill in missing during review)
+  if (!details.jobTitle && !details.company) {
+    console.log("No job title or company found, creating pending import with raw email data");
+    const { data: pendingImport, error: pendingError } = await supabase
+      .from("pending_application_imports")
+      .insert({
+        user_id: userId,
+        platform_name: platform,
+        job_title: details.jobTitle || `Unknown from ${platform}`,
+        company_name: details.company || "Unknown Company",
+        location: details.location,
+        status: "pending",
+        extracted_data: {
+          email_subject: emailData.subject,
+          email_from: emailData.fromEmail,
+          email_snippet: emailData.snippet,
+          platform,
+        },
+      })
+      .select()
+      .single();
+
+    if (pendingError) {
+      console.error("Error creating pending import with partial data:", pendingError);
+      return { action: "error", error: pendingError.message };
+    }
+
+    console.log(`Created pending import with partial data for ${platform}`);
+    return { action: "pending_review", pendingImportId: pendingImport?.id, platform, details };
+  }
+
+  // Check for existing job with same title and company
+  const { data: existingJobs } = await supabase
+    .from("jobs")
+    .select("id, primary_platform, platform_count")
+    .eq("user_id", userId)
+    .ilike("job_title", `%${details.jobTitle}%`)
+    .ilike("company_name", `%${details.company}%`);
+
+  if (existingJobs && existingJobs.length > 0) {
+    const existingJobId = existingJobs[0].id;
+
+    // Check if this platform is already tracked
+    const { data: existingPlatform } = await supabase
+      .from("application_platforms")
+      .select("id")
+      .eq("job_id", existingJobId)
+      .eq("platform_name", platform)
+      .maybeSingle();
+
+    if (!existingPlatform) {
+      // Add new platform to existing job (consolidate duplicate)
+      await supabase.from("application_platforms").insert({
+        user_id: userId,
+        job_id: existingJobId,
+        platform_name: platform,
+        platform_status: "applied",
+        imported_from_email: true,
+        platform_data: { subject: emailData.subject, fromEmail: emailData.fromEmail }
+      });
+
+      // Update platform count
+      const currentCount = existingJobs[0].platform_count || 1;
+      await supabase
+        .from("jobs")
+        .update({ platform_count: currentCount + 1 })
+        .eq("id", existingJobId);
+
+      console.log(`Consolidated platform ${platform} into existing job ${existingJobId}`);
+      return { action: "consolidated", jobId: existingJobId, platform };
+    }
+
+    return { action: "already_tracked", jobId: existingJobId };
+  }
+
+  // No existing job found - always create a pending import for user review
+  const { data: pendingImport, error: pendingError } = await supabase
+    .from("pending_application_imports")
+    .insert({
+      user_id: userId,
+      platform_name: platform,
+      job_title: details.jobTitle,
+      company_name: details.company,
+      location: details.location,
+      status: "pending",
+      extracted_data: {
+        email_subject: emailData.subject,
+        email_from: emailData.fromEmail,
+        email_snippet: emailData.snippet,
+        platform,
+      },
+    })
+    .select()
+    .single();
+
+  if (pendingError) {
+    console.error("Error creating pending import:", pendingError);
+    return { action: "error", error: pendingError.message };
+  }
+
+  console.log(`Created pending import for ${platform}: ${details.jobTitle}`);
+  return { action: "pending_review", pendingImportId: pendingImport?.id, platform, details };
 }
 
 serve(async (req) => {
@@ -69,6 +318,8 @@ serve(async (req) => {
     if (!integration.scanning_enabled) {
       throw new Error("Email scanning is disabled. Enable it in settings.");
     }
+
+    const autoImportEnabled = integration.auto_import_enabled || false;
 
     let accessToken = integration.gmail_access_token;
 
@@ -135,6 +386,7 @@ serve(async (req) => {
     console.log(`Found ${messages.length} potential job-related emails`);
 
     const newEmails = [];
+    const autoImportResults = [];
 
     for (const msg of messages.slice(0, 25)) { // Limit to 25 for rate limiting
       // Check if already processed
@@ -143,7 +395,7 @@ serve(async (req) => {
         .select("id")
         .eq("user_id", user.id)
         .eq("gmail_message_id", msg.id)
-        .single();
+        .maybeSingle();
 
       if (existing) continue;
 
@@ -206,6 +458,27 @@ serve(async (req) => {
 
       if (!insertError) {
         newEmails.push(emailRecord);
+
+        // AUTO-IMPORT: Check if this is from a known job platform
+        const platform = detectPlatform(fromEmail, subject);
+        if (platform) {
+          console.log(`Detected platform email from ${platform}: ${subject}`);
+          
+          // Use AI to extract job details
+          const details = await extractJobDetailsWithAI(platform, subject, rawContent || snippet, fromEmail);
+          
+          if (details) {
+            const importResult = await autoImportPlatformEmail(
+              supabase,
+              user.id,
+              platform,
+              details,
+              { subject, fromEmail, snippet },
+              autoImportEnabled
+            );
+            autoImportResults.push(importResult);
+          }
+        }
       }
     }
 
@@ -215,12 +488,22 @@ serve(async (req) => {
       .update({ last_scan_at: new Date().toISOString() })
       .eq("user_id", user.id);
 
+    const autoImported = autoImportResults.filter(r => r.action === "auto_imported").length;
+    const consolidated = autoImportResults.filter(r => r.action === "consolidated").length;
+    const pendingReview = autoImportResults.filter(r => r.action === "pending_review").length;
+
     return new Response(
       JSON.stringify({
         success: true,
         scanned: messages.length,
         newEmails: newEmails.length,
         emails: newEmails,
+        autoImportResults: {
+          autoImported,
+          consolidated,
+          pendingReview,
+          details: autoImportResults
+        }
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

@@ -50,6 +50,7 @@ const ProductivityAnalysis = lazy(() => import("./pages/ProductivityAnalysis"));
 const CompetitiveAnalysis = lazy(() => import("./pages/CompetitiveAnalysis"));
 const ProgressSharing = lazy(() => import("./pages/ProgressSharing"));
 const References = lazy(() => import("./pages/References"));
+const ReferencesAndReferrals = lazy(() => import("./pages/ReferencesAndReferrals"));
 const ReferenceResponse = lazy(() => import("./pages/ReferenceResponse"));
 const Events = lazy(() => import("./pages/Events"));
 const Stats = lazy(() => import("./pages/Stats"));
@@ -58,7 +59,9 @@ const EnterpriseDashboard = lazy(() => import("./pages/EnterpriseDashboard"));
 const ExternalAdvisors = lazy(() => import("./pages/ExternalAdvisors"));
 const SalaryAnalytics = lazy(() => import("./pages/SalaryAnalytics"));
 const PredictiveAnalytics = lazy(() => import("./pages/PredictiveAnalytics"));
+const AnalyticsHub = lazy(() => import("./pages/AnalyticsHub"));
 const MockInterview = lazy(() => import("./pages/MockInterview"));
+const PreparationHub = lazy(() => import("./pages/PreparationHub"));
 const DocManagement = lazy(() => import("./pages/DocManagement"));
 const SuccessOptimization = lazy(() => import("./pages/SuccessOptimization"));
 const ABTestingDashboard = lazy(() => import("./pages/ABTestingDashboard"));
@@ -121,7 +124,7 @@ const App = () => (
                 <Route path="/job-matchings" element={<JobMatchings />} />
                 <Route path="/skill-development" element={<SkillDevelopment />} />
                 <Route path="/contacts" element={<Contacts />} />
-                <Route path="/networking-campaigns" element={<NetworkingCampaigns />} />
+                <Route path="/campaigns" element={<NetworkingCampaigns />} />
                 <Route path="/networking" element={<Networking />} />
                 <Route path="/family-support" element={<FamilySupport />} />
                 <Route path="/mentors" element={<Mentors />} />
@@ -135,6 +138,7 @@ const App = () => (
                 <Route path="/competitive-analysis" element={<CompetitiveAnalysis />} />
                 <Route path="/progress-sharing" element={<ProgressSharing />} />
                 <Route path="/references" element={<References />} />
+                <Route path="/references-and-referrals" element={<ReferencesAndReferrals />} />
                 <Route path="/reference-response" element={<ReferenceResponse />} />
                 <Route path="/events" element={<Events />} />
                 <Route path="/stats" element={<Stats />} />
@@ -142,14 +146,16 @@ const App = () => (
                 <Route path="/external-advisors" element={<ExternalAdvisors />} />
                 <Route path="/salary-analytics" element={<SalaryAnalytics />} />
                 <Route path="/predictive-analytics" element={<PredictiveAnalytics />} />
+                <Route path="/analytics-hub" element={<AnalyticsHub />} />
                 <Route path="/mock-interview" element={<MockInterview />} />
+                <Route path="/preparation-hub" element={<PreparationHub />} />
                 <Route path="/doc-management" element={<DocManagement />} />
                 <Route path="/success-optimization" element={<SuccessOptimization />} />
                 <Route path="/ab-testing" element={<ABTestingDashboard />} />
                 <Route path="/platform-tracking" element={<PlatformTracking />} />
                 <Route path="/response-library" element={<ResponseLibrary />} />
                 <Route path="/offer-comparison" element={<OfferComparison />} />
-                <Route path="/monitoring" element={<MonitoringDashboard />} />
+                <Route path="/monitoring-dashboard" element={<MonitoringDashboard />} />
                 <Route path="/documentation" element={<Documentation />} />
                 <Route path="/terms" element={<TermsOfService />} />
                 <Route path="/privacy" element={<PrivacyPolicy />} />

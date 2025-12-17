@@ -103,7 +103,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const senderName = profile ? `${profile.first_name} ${profile.last_name}` : user.email;
-    const senderEmail = user.email || 'theteamnjit5@gmail.com';
+    const senderEmail = user.email || Deno.env.get("EMAIL_FROM") || 'dem6@njit.edu';
 
     // Format the message into clean HTML
     const messageParagraphs = message
@@ -114,7 +114,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     const htmlContent = `
       <!DOCTYPE html>
-      <html>
+      <html lang="en">
         <head>
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">

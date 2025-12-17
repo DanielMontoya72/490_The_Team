@@ -19,7 +19,7 @@ Deno.serve(async (req) => {
 
     // Get the app URL from request headers
     const origin = req.headers.get('origin') || req.headers.get('referer')?.split('/').slice(0, 3).join('/');
-    const appUrl = origin || Deno.env.get("APP_URL") || 'http://localhost:8080';
+    const appUrl = origin || Deno.env.get("APP_URL") || 'https://490-the-team.vercel.app/';
 
     const { mentorEmail, mentorName, message, userId } = await req.json();
 

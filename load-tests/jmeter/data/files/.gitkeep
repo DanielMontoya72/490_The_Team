@@ -1,0 +1,12 @@
+# Test Files Directory
+# 
+# Place test files here for upload tests:
+# - sample-resume-small.pdf (100KB)
+# - sample-resume-medium.pdf (500KB)
+# - sample-resume-large.pdf (2MB)
+# - sample-image.jpg (100KB)
+# - sample-document.docx (200KB)
+#
+# You can generate sample files using:
+# - dd if=/dev/urandom of=sample-100kb.bin bs=1024 count=100
+# - Or use actual resume/document samples

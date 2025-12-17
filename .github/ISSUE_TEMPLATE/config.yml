@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 Feature Request
+    url: https://github.com/YOUR_ORG/YOUR_REPO/discussions/new?category=ideas
+    about: Suggest a new feature or enhancement
+  - name: 📚 Documentation
+    url: https://github.com/YOUR_ORG/YOUR_REPO/wiki
+    about: Check our documentation for guides and FAQs
+  - name: 💬 Questions & Discussions
+    url: https://github.com/YOUR_ORG/YOUR_REPO/discussions
+    about: Ask questions or start a discussion

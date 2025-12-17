@@ -188,7 +188,7 @@ monitor:
 # API Health Check
 monitor:
   name: "API Health"
-  url: "https://aflesduelgyesqdqbvkb.supabase.co/rest/v1/"
+  url: "https://hjivwsckydccmhjndguq.supabase.co/rest/v1/"
   type: HTTP(S)
   interval: 300
   expected_status: 401  # Returns 401 without auth, confirms API is up

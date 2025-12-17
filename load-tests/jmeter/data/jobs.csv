@@ -1,0 +1,11 @@
+title,company,location,status,salary_min,salary_max
+Software Engineer,Tech Corp,San Francisco,applied,120000,180000
+Product Manager,StartupXYZ,New York,interviewing,130000,170000
+Data Scientist,DataCo,Remote,saved,140000,200000
+Frontend Developer,WebDev Inc,Austin,applied,100000,150000
+Backend Engineer,CloudSystems,Seattle,offer,150000,220000
+DevOps Engineer,InfraTech,Denver,applied,130000,180000
+Full Stack Developer,AllStack,Boston,saved,110000,160000
+Machine Learning Engineer,AIFirst,San Jose,interviewing,160000,250000
+QA Engineer,QualityFirst,Chicago,applied,90000,130000
+Security Engineer,SecureTech,Washington DC,saved,140000,200000

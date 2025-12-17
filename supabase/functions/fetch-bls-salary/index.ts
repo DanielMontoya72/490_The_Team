@@ -197,6 +197,7 @@ serve(async (req) => {
     console.log('Calling BLS API with series:', seriesIds[0]);
 
     // BLS API v2 request (no API key required for basic access)
+    const startTime = Date.now();
     const blsResponse = await fetch('https://api.bls.gov/publicAPI/v2/timeseries/data/', {
       method: 'POST',
       headers: {
@@ -208,6 +209,22 @@ serve(async (req) => {
         endyear: String(dataYear),
       }),
     });
+    const responseTimeMs = Date.now() - startTime;
+
+    // Track API usage
+    try {
+      await supabaseClient.from('api_usage_logs').insert({
+        service_name: 'bls_api',
+        endpoint: '/publicAPI/v2/timeseries/data/',
+        method: 'POST',
+        status_code: blsResponse.status,
+        response_time_ms: responseTimeMs,
+        success: blsResponse.ok,
+        error_message: blsResponse.ok ? null : `BLS API error: ${blsResponse.status}`,
+      });
+    } catch (trackError) {
+      console.error('Failed to track API usage:', trackError);
+    }
 
     if (!blsResponse.ok) {
       console.error('BLS API error:', blsResponse.status, blsResponse.statusText);

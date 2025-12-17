@@ -1,0 +1,156 @@
+/* Lighthouse Performance and Accessibility Optimizations */
+
+/* Font Display Optimization - Force swap on all fonts */
+@font-face {
+  font-display: swap;
+}
+
+/* Adobe TypeKit Font Display Override - Aggressive targeting */
+.tk-proxima-nova,
+.tk-source-sans-pro,
+.tk-adobe-clean,
+.tk-source-code-pro,
+[class*="tk-"],
+[style*="font-family"][style*="proxima-nova"],
+[style*="font-family"][style*="source-sans-pro"],
+.typekit-loaded *,
+body.fonts-loaded * {
+  font-display: swap !important;
+}
+
+/* Override any inline font-display styles */
+* {
+  font-display: swap !important;
+}
+
+/* High contrast improvements for accessibility */
+.text-destructive {
+  color: hsl(0 84% 45%) !important; /* Darker red for better contrast */
+}
+
+.dark .text-destructive {
+  color: hsl(0 72% 60%) !important; /* Lighter red for dark mode */
+}
+
+/* Ensure sufficient contrast for card borders */
+.border-l-destructive {
+  border-left-color: hsl(0 84% 45%) !important;
+}
+
+.dark .border-l-destructive {
+  border-left-color: hsl(0 72% 60%) !important;
+}
+
+/* Optimize font loading to reduce layout shift */
+@font-face {
+  font-family: 'system-ui-fallback';
+  src: local('system-ui'), local('-apple-system'), local('BlinkMacSystemFont'), local('Segoe UI'), local('Roboto');
+  font-display: swap;
+}
+
+/* Preload critical images and reduce layout shift */
+.logo-container {
+  width: auto;
+  height: 40px;
+  display: flex;
+  align-items: center;
+}
+
+.logo-image {
+  max-width: 100%;
+  height: auto;
+  aspect-ratio: auto;
+}
+
+/* Improve accessibility for reduced motion users */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Improve text contrast in dark mode */
+@media (prefers-color-scheme: dark) {
+  body {
+    background-color: #0a0a0a;
+    color: #fafafa;
+  }
+}
+
+/* Ensure adequate touch targets on mobile */
+@media (max-width: 768px) {
+  button,
+  [role="button"],
+  input[type="button"],
+  input[type="submit"],
+  a {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Loading states to prevent layout shift */
+.loading-skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Screen reader improvements */
+.sr-only-focusable:focus {
+  position: static !important;
+  width: auto !important;
+  height: auto !important;
+  padding: 1rem !important;
+  margin: 0 !important;
+  overflow: visible !important;
+  clip: auto !important;
+  white-space: normal !important;
+  background-color: var(--background) !important;
+  color: var(--foreground) !important;
+  border: 2px solid var(--ring) !important;
+  border-radius: 0.375rem !important;
+  z-index: 9999 !important;
+}
+
+/* Performance: Optimize animations */
+.transition-optimized {
+  will-change: auto;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* Performance: Lazy loading improvements */
+img[loading="lazy"] {
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+img[loading="lazy"].loaded {
+  opacity: 1;
+}
+
+/* Critical resource hints for better performance */
+.preload-hint::before {
+  content: "";
+  position: absolute;
+  top: -9999px;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+}

@@ -6,42 +6,56 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Platform detection patterns
+// Platform detection patterns - improved extractors to match test emails
 const PLATFORM_PATTERNS = {
   linkedin: {
-    fromPatterns: [/@linkedin\.com$/i, /linkedin/i],
-    subjectPatterns: [/your application/i, /applied to/i, /job alert/i, /congratulations/i],
+    fromPatterns: [/@linkedin\.com$/i, /linkedin/i, /jobs-noreply@linkedin/i],
+    subjectPatterns: [/your application/i, /applied to/i, /job alert/i, /congratulations/i, /was sent to/i],
     extractors: {
-      jobTitle: /applied (?:for|to) (?:the )?(.+?) (?:position|role|job)/i,
-      company: /at ([^.!,]+)/i,
-      location: /(?:Location|in): ([^.!,\n]+)/i,
+      // LinkedIn format: "CT Technologist\nJobot Consulting · New York, NY (On-site)" in body
+      // Or subject: "Matthew, your application was sent to Jobot Consulting"
+      jobTitle: [
+        /^([A-Za-z][A-Za-z\s\/\-]+?)\n[A-Z]/m, // Job title on its own line followed by company
+        /applied (?:for|to) (?:the )?(.+?)(?:\s+at\s+|\s+position|\s+role|\s+job|\.)/i,
+      ],
+      company: [
+        /was sent to ([A-Za-z][A-Za-z0-9\s&\-\.]+?)(?:\s*$|\s+[A-Z])/i, // "was sent to Jobot Consulting"
+        /([A-Z][A-Za-z0-9\s&\-\.]+?)\s*[·•]\s*[A-Za-z]/i, // "Jobot Consulting · New York"
+        /(?:at|to) ([A-Z][^.!,\n]+?)(?:\.|,|!|\s+Location|\s+Your|\s*$)/i,
+      ],
+      location: [
+        /[·•]\s*([A-Za-z][A-Za-z\s,]+(?:\([^)]+\))?)/i, // "· New York, NY (On-site)"
+        /(?:Location|in)[:\s]+([^.!,\n]+)/i,
+      ],
     }
   },
   indeed: {
-    fromPatterns: [/@indeed\.com$/i, /indeed/i],
-    subjectPatterns: [/application/i, /applied/i, /interview/i],
+    fromPatterns: [/@indeed\.com$/i, /indeed/i, /no-reply@indeed/i],
+    subjectPatterns: [/application/i, /applied/i, /interview/i, /submitted/i],
     extractors: {
-      jobTitle: /applied (?:for|to) (.+?) at/i,
-      company: /at ([^.!,]+)/i,
-      location: /(?:Location|in): ([^.!,\n]+)/i,
+      // Match: "Application Submitted: Product Manager at Amazon" or "applied for Product Manager at Amazon"
+      jobTitle: /(?:submitted[:\s]+|applied (?:for|to) )(.+?)\s+at\s+/i,
+      company: /at ([A-Z][^.!,\n]+?)(?:\.|,|!|\s+Location|\s+Keep|\s*$)/i,
+      location: /(?:Location|in)[:\s]+([^.!,\n]+)/i,
     }
   },
   glassdoor: {
-    fromPatterns: [/@glassdoor\.com$/i, /glassdoor/i],
-    subjectPatterns: [/application/i, /applied/i, /job/i],
+    fromPatterns: [/@glassdoor\.com$/i, /glassdoor/i, /notifications@glassdoor/i],
+    subjectPatterns: [/application/i, /applied/i, /job/i, /confirmation/i],
     extractors: {
-      jobTitle: /(?:applied for|position): (.+?)(?:\s+at|\s+-|$)/i,
-      company: /(?:at|company): ([^.!,\n]+)/i,
-      location: /(?:Location|in): ([^.!,\n]+)/i,
+      // Match: "You applied for position: UX Designer at Meta"
+      jobTitle: /(?:applied for (?:position[:\s]*)?|position[:\s]+)(.+?)\s+at\s+/i,
+      company: /at ([A-Z][^.!,\n]+?)(?:\.|,|!|\s+Location|\s+Good|\s*$)/i,
+      location: /(?:Location|in)[:\s]+([^.!,\n]+)/i,
     }
   },
   ziprecruiter: {
     fromPatterns: [/@ziprecruiter\.com$/i, /ziprecruiter/i],
     subjectPatterns: [/application/i, /applied/i],
     extractors: {
-      jobTitle: /applied (?:for|to) (.+?) at/i,
-      company: /at ([^.!,]+)/i,
-      location: /(?:Location|in): ([^.!,\n]+)/i,
+      jobTitle: /applied (?:for|to) (.+?)\s+at\s+/i,
+      company: /at ([A-Z][^.!,\n]+?)(?:\.|,|!|\s+Location|\s*$)/i,
+      location: /(?:Location|in)[:\s]+([^.!,\n]+)/i,
     }
   }
 };
@@ -57,15 +71,34 @@ function detectPlatform(fromEmail: string, subject: string): string | null {
   return null;
 }
 
+function tryMatch(text: string, patterns: RegExp | RegExp[]): RegExpMatchArray | null {
+  if (Array.isArray(patterns)) {
+    for (const pattern of patterns) {
+      const match = text.match(pattern);
+      if (match?.[1]) return match;
+    }
+    return null;
+  }
+  return text.match(patterns);
+}
+
 function extractJobDetails(platform: string, subject: string, body: string) {
   const patterns = PLATFORM_PATTERNS[platform as keyof typeof PLATFORM_PATTERNS];
   if (!patterns) return null;
 
-  const combinedText = `${subject} ${body}`;
+  const combinedText = `${subject}\n${body}`;
   
-  const jobTitleMatch = combinedText.match(patterns.extractors.jobTitle);
-  const companyMatch = combinedText.match(patterns.extractors.company);
-  const locationMatch = combinedText.match(patterns.extractors.location);
+  console.log(`[parse-platform-email] Extracting from platform: ${platform}`);
+  console.log(`[parse-platform-email] Subject: ${subject}`);
+  console.log(`[parse-platform-email] Body preview: ${body.substring(0, 300)}...`);
+  
+  const jobTitleMatch = tryMatch(combinedText, patterns.extractors.jobTitle);
+  const companyMatch = tryMatch(combinedText, patterns.extractors.company);
+  const locationMatch = tryMatch(combinedText, patterns.extractors.location);
+
+  console.log(`[parse-platform-email] Job title match: ${JSON.stringify(jobTitleMatch)}`);
+  console.log(`[parse-platform-email] Company match: ${JSON.stringify(companyMatch)}`);
+  console.log(`[parse-platform-email] Location match: ${JSON.stringify(locationMatch)}`);
 
   return {
     jobTitle: jobTitleMatch?.[1]?.trim() || null,
@@ -175,13 +208,15 @@ serve(async (req) => {
         .insert({
           user_id: user.id,
           platform_name: platform,
-          extracted_job_title: details.jobTitle,
-          extracted_company: details.company,
-          extracted_location: details.location,
-          email_subject: subject,
-          email_from: fromEmail,
-          raw_email_content: rawContent || body,
-          import_status: "pending"
+          job_title: details.jobTitle,
+          company_name: details.company,
+          location: details.location,
+          status: "pending",
+          extracted_data: {
+            email_subject: subject,
+            email_from: fromEmail,
+            raw_email_content: rawContent || body,
+          },
         })
         .select()
         .single();

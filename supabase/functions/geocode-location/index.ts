@@ -55,7 +55,7 @@ async function geocodeWithNominatim(location: string): Promise<GeocodeResult | n
     const response = await fetch(url, {
       method: "GET",
       headers: {
-        "User-Agent": "TheTeamJobTracker/1.0 (https://theteam.lovable.app; support@lovable.app)",
+        "User-Agent": "TheTeamJobTracker/1.0",
         "Accept": "application/json",
         "Accept-Language": "en-US,en;q=0.9",
       },

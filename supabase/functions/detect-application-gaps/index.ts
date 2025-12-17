@@ -44,7 +44,7 @@ serve(async (req) => {
       .from("pending_application_imports")
       .select("*")
       .eq("user_id", user.id)
-      .eq("import_status", "pending");
+      .eq("status", "pending");
 
     // Analyze gaps - emails that mention jobs not in our system
     const gaps: any[] = [];
@@ -88,10 +88,10 @@ serve(async (req) => {
         source: "platform_email",
         pendingId: pending.id,
         platform: pending.platform_name,
-        suggestedJobTitle: pending.extracted_job_title,
-        suggestedCompany: pending.extracted_company,
-        suggestedLocation: pending.extracted_location,
-        receivedAt: pending.created_at
+        suggestedJobTitle: pending.job_title,
+        suggestedCompany: pending.company_name,
+        suggestedLocation: pending.location,
+        receivedAt: pending.created_at,
       });
     });
 

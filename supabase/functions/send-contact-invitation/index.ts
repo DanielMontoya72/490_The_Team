@@ -62,7 +62,7 @@ serve(async (req) => {
     const emailSubject = `Let's Connect - ${senderName}`;
     const emailBody = `
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <style>
     body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }

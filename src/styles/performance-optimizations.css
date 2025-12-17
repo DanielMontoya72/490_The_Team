@@ -1,0 +1,52 @@
+/* Additional performance optimizations for unused CSS reduction */
+
+/* Optimize calendar component styles - reduce unused CSS */
+.rdp-root {
+  /* Only load essential calendar variables */
+  --rdp-accent-color: hsl(var(--primary));
+  --rdp-background-color: hsl(var(--background));
+  --rdp-cell-size: 2.5rem;
+}
+
+/* Tree-shake unused calendar day variations */
+.rdp-day:not(.rdp-day_selected):not(.rdp-day_today):not(.rdp-day_outside) {
+  /* Simplified styles for better performance */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Reduce icon rendering overhead */
+.lucide {
+  /* Force hardware acceleration for better performance */
+  transform: translateZ(0);
+  will-change: transform;
+}
+
+/* Optimize large text rendering */
+h1, h2, h3 {
+  /* Reduce paint complexity */
+  contain: layout style paint;
+}
+
+/* Minimize layout thrashing */
+.card {
+  /* Contain layout changes */
+  contain: layout;
+}
+
+/* Optimize animation performance */
+@media (prefers-reduced-motion: no-preference) {
+  .transition-all {
+    /* Use transform instead of layout properties */
+    transition: transform 0.2s ease-in-out, opacity 0.2s ease-in-out;
+  }
+}
+
+/* Optimize image containers */
+.object-contain {
+  /* Improve image rendering performance */
+  object-fit: contain;
+  image-rendering: auto;
+  shape-rendering: auto;
+}

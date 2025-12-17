@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { ChevronLeft, ChevronRight, Clock, Briefcase, Cake as CakeIcon } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Clock, Cake as CakeIcon } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface DashboardCalendarProps {
@@ -97,6 +97,7 @@ export function DashboardCalendar({
           size="sm"
           onClick={prevMonth}
           className="h-7 w-7 p-0"
+          aria-label="Previous month"
         >
           <ChevronLeft className="h-4 w-4" />
         </Button>
@@ -108,6 +109,7 @@ export function DashboardCalendar({
           size="sm"
           onClick={nextMonth}
           className="h-7 w-7 p-0"
+          aria-label="Next month"
         >
           <ChevronRight className="h-4 w-4" />
         </Button>
@@ -158,8 +160,10 @@ export function DashboardCalendar({
                   } ${hasItems ? 'bg-accent/10' : 'bg-background'} ${
                     isSelected ? 'ring-2 ring-primary ring-offset-1' : ''
                   } ${hasItems ? 'cursor-pointer hover:brightness-95' : ''} flex flex-col transition-all`}
+                  aria-label={hasItems ? `${format(date, 'MMMM d, yyyy')} - View ${jobsOnThisDay.length + interviewsOnThisDay.length + infoInterviewsOnThisDay.length + remindersOnThisDay.length + birthdaysOnThisDay.length} item${jobsOnThisDay.length + interviewsOnThisDay.length + infoInterviewsOnThisDay.length + remindersOnThisDay.length + birthdaysOnThisDay.length > 1 ? 's' : ''}` : `${format(date, 'MMMM d, yyyy')} - No events`}
+                  disabled={!hasItems}
                 >
-                  <div className={`font-semibold ${isToday ? 'text-primary' : ''}`}>
+                  <div className={`font-semibold text-xs ${isToday ? 'text-primary' : ''}`}>
                     {day}
                   </div>
                   <div className="space-y-0.5 overflow-hidden flex-1">

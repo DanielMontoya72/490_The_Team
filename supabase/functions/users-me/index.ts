@@ -72,26 +72,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Extract user id from verified JWT (verify_jwt=true ensures token is valid)
-    const token = authHeader.replace('Bearer ', '');
-    let userId: string | null = null;
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1] || ''));
-      userId = payload?.sub ?? null;
-    } catch (e) {
-      console.error('[users-me] Failed to decode JWT:', e);
-    }
-
-    if (!userId) {
-      return createErrorResponse(
-        'UNAUTHORIZED',
-        'Authentication required. Please log in.',
-        'Could not extract user id from token',
-        401
-      );
-    }
-
-    // Initialize Supabase client with auth for DB policies
+    // Initialize Supabase client with the user's auth token
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
@@ -101,6 +82,20 @@ Deno.serve(async (req) => {
         },
       }
     );
+
+    // Get the authenticated user using Supabase's built-in auth verification
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+    
+    if (userError || !user) {
+      return createErrorResponse(
+        'UNAUTHORIZED',
+        'Authentication required. Please log in.',
+        userError?.message || 'Invalid or expired token',
+        401
+      );
+    }
+
+    const userId = user.id;
 
     console.log(`[users-me] ${req.method} request for user: ${userId}`);
 

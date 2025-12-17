@@ -206,3 +206,9 @@ verify_jwt = false
 
 [functions.generate-api-weekly-report]
 verify_jwt = true
+
+[functions.extract-job-from-email]
+verify_jwt = true
+
+[functions.parse-platform-email]
+verify_jwt = true

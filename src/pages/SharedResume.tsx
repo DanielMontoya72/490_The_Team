@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { ResumePreviewPanel } from "@/components/resume/ResumePreviewPanel";
+import SimpleResumeTemplate from "@/components/resume/SimpleResumeTemplate";
 import { ResumeFeedbackPanel } from "@/components/resume/ResumeFeedbackPanel";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -135,10 +135,26 @@ export default function SharedResume() {
             </div>
 
             <div className="bg-card rounded-lg border p-6">
-              <ResumePreviewPanel
-                content={resume.content || {}}
-                customization={resume.customization_overrides || {}}
-                template={resume.template_id ? { id: resume.template_id } : undefined}
+              <SimpleResumeTemplate
+                data={{
+                  personalInfo: {
+                    name: `${resume.content?.profile?.first_name || ''} ${resume.content?.profile?.last_name || ''}`.trim(),
+                    email: resume.content?.profile?.email || '',
+                    phone: resume.content?.profile?.phone || '',
+                    location: resume.content?.profile?.location || '',
+                    headline: resume.content?.profile?.headline || '',
+                    linkedin: resume.content?.profile?.linkedin || '',
+                  },
+                  summary: resume.content?.summary || '',
+                  skills: Array.isArray(resume.content?.skills)
+                    ? resume.content.skills.map((s: any) => typeof s === 'string' ? s : s.skill_name || '')
+                    : [],
+                  experience: resume.content?.employment || [],
+                  education: resume.content?.education || [],
+                  additional: resume.content?.additional || '',
+                }}
+                primaryColor={resume.customization_overrides?.primaryColor || '#2563eb'}
+                templateStyle={resume.customization_overrides?.templateStyle || 'classic'}
               />
             </div>
           </div>

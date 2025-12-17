@@ -75,7 +75,7 @@ export function ApiUsageOverview() {
   };
 
   const getSuccessRate = (service: ServiceUsage) => {
-    if (service.total_requests === 0) return 100;
+    if (service.total_requests === 0) return null;
     return Math.round((service.successful_requests / service.total_requests) * 100);
   };
 
@@ -89,14 +89,14 @@ export function ApiUsageOverview() {
     if (quotaPercent && quotaPercent >= 70) {
       return <Badge className="bg-yellow-500">Quota Warning</Badge>;
     }
-    if (successRate < 80) {
-      return <Badge variant="destructive">High Errors</Badge>;
-    }
-    if (successRate < 95) {
-      return <Badge className="bg-yellow-500">Some Errors</Badge>;
-    }
     if (service.total_requests === 0) {
       return <Badge variant="secondary">No Activity</Badge>;
+    }
+    if (successRate !== null && successRate < 80) {
+      return <Badge variant="destructive">High Errors</Badge>;
+    }
+    if (successRate !== null && successRate < 95) {
+      return <Badge className="bg-yellow-500">Some Errors</Badge>;
     }
     return <Badge className="bg-green-500">Healthy</Badge>;
   };
@@ -208,14 +208,14 @@ export function ApiUsageOverview() {
                     </div>
                     <div>
                       <p className="text-muted-foreground">Success Rate</p>
-                      <p className={`font-medium ${successRate < 90 ? 'text-destructive' : 'text-green-600'}`}>
-                        {successRate}%
+                      <p className={`font-medium ${successRate !== null && successRate < 90 ? 'text-destructive' : successRate !== null ? 'text-green-600' : 'text-muted-foreground'}`}>
+                        {successRate !== null ? `${successRate}%` : 'N/A'}
                       </p>
                     </div>
                     <div>
                       <p className="text-muted-foreground">Avg Response</p>
-                      <p className={`font-medium ${service.avg_response_time_ms > 2000 ? 'text-yellow-600' : ''}`}>
-                        {service.avg_response_time_ms}ms
+                      <p className={`font-medium ${service.avg_response_time_ms > 2000 ? 'text-yellow-600' : service.total_requests === 0 ? 'text-muted-foreground' : ''}`}>
+                        {service.total_requests > 0 ? `${service.avg_response_time_ms}ms` : 'N/A'}
                       </p>
                     </div>
                     <div>

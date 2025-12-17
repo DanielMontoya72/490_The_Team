@@ -1,39 +1,69 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { AppNav } from "@/components/layout/AppNav";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ResumeTemplateSelector } from "@/components/resume/ResumeTemplateSelector";
-import { ResumeTemplatesShowcase } from "@/components/resume/ResumeTemplatesShowcase";
 import { ResumeList } from "@/components/resume/ResumeList";
 import { ResumeEditor } from "@/components/resume/ResumeEditor";
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { FileText, Users, ArrowLeft, Archive, Trash2 } from "lucide-react";
+import { FileText, Users, ArrowLeft, Archive, Trash2, Mail, FolderOpen, FlaskConical, Layout, Book, Rocket, HelpCircle } from "lucide-react";
 import { toast } from "sonner";
-import { ShareTemplateDialog } from "@/components/resume/ShareTemplateDialog";
 import { useTextSize } from "@/components/text-size-provider";
+import { cn } from "@/lib/utils";
+import { ShareTemplateDialog } from "@/components/resume/ShareTemplateDialog";
+
 
 interface Template {
   id: string;
   template_name: string;
-  template_type: string;
-  is_default: boolean;
-  is_system_template: boolean;
-  customization_settings: any;
-  team_id: string | null;
-  user_id: string | null;
-  created_at: string;
+  template_type?: string;
+  is_default?: boolean;
+  is_system_template?: boolean;
+  customization_settings?: any;
+  team_id?: string | null;
+  created_at?: string;
+  user_role?: string;
+  user_id?: string;
   teams?: {
     name: string;
   };
-  user_role?: 'owner' | 'admin' | 'member' | 'viewer' | 'mentor' | 'candidate';
 }
 
+// Document Management sidebar navigation
+const docManagementNavigation = [
+  { to: "/doc-management", icon: Layout, label: "Doc Management" },
+  { to: "/resumes", icon: FileText, label: "Resumes" },
+  { to: "/cover-letters", icon: Mail, label: "Cover Letters" },
+  { to: "/ab-testing", icon: FlaskConical, label: "A/B Testing" },
+];
+
+
+
 const Resumes = () => {
+    // Fetch shared templates for the "Shared Templates" tab
+    const fetchSharedTemplates = async () => {
+      setLoadingTemplates(true);
+      try {
+        const { data, error } = await supabase
+          .from("resume_templates")
+          .select("* , teams:team_id(*)")
+          .or(`user_id.eq.${session?.user?.id},team_id.is.not.null`)
+          .order("created_at", { ascending: false });
+        if (error) throw error;
+        setSharedTemplates(data || []);
+      } catch (err) {
+        setSharedTemplates([]);
+        toast.error("Failed to load shared templates");
+      } finally {
+        setLoadingTemplates(false);
+      }
+    };
   const navigate = useNavigate();
+  const location = useLocation();
   const { textSize } = useTextSize();
 
   // Define responsive text sizes based on textSize setting
@@ -127,48 +157,7 @@ const Resumes = () => {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
-  const fetchSharedTemplates = async () => {
-    if (!session?.user?.id) return;
-    
-    setLoadingTemplates(true);
-    try {
-      const { data, error } = await supabase
-        .from("resume_templates")
-        .select(`
-          *,
-          teams(name)
-        `)
-        .eq("is_system_template", false)
-        .not("team_id", "is", null)
-        .order("created_at", { ascending: false });
 
-      if (error) throw error;
-
-      // Fetch user roles for team templates
-      const templatesWithRoles = await Promise.all(
-        (data || []).map(async (template) => {
-          if (template.team_id) {
-            const { data: memberData } = await supabase
-              .from("team_members")
-              .select("role")
-              .eq("team_id", template.team_id)
-              .eq("user_id", session.user.id)
-              .maybeSingle();
-            
-            return { ...template, user_role: memberData?.role };
-          }
-          return template;
-        })
-      );
-
-      setSharedTemplates(templatesWithRoles);
-    } catch (error: any) {
-      toast.error("Failed to load templates");
-      console.error(error);
-    } finally {
-      setLoadingTemplates(false);
-    }
-  };
 
   const handleRemoveSharing = async (templateId: string, templateName: string) => {
     try {
@@ -212,8 +201,61 @@ const Resumes = () => {
     setShareDialogOpen(true);
   };
 
+
   const handleEditResume = (resumeId: string) => {
     setEditingResumeId(resumeId);
+  };
+
+  // Handle new resume creation from template picker dialog
+  const handleCreateNewResume = async ({ template, jobId }: { template: any, jobId: string }) => {
+    try {
+      // Fetch user profile data
+      const [profileRes, employmentRes, skillsRes, educationRes, certificationsRes, projectsRes] = await Promise.all([
+        supabase.from("user_profiles").select("*").eq("user_id", session.user.id).maybeSingle(),
+        supabase.from("employment_history").select("*").eq("user_id", session.user.id).order("start_date", { ascending: false }),
+        supabase.from("skills").select("*").eq("user_id", session.user.id).order("display_order"),
+        supabase.from("education").select("*").eq("user_id", session.user.id).order("graduation_date", { ascending: false }),
+        supabase.from("certifications").select("*").eq("user_id", session.user.id).order("date_earned", { ascending: false }),
+        supabase.from("projects").select("*").eq("user_id", session.user.id).order("start_date", { ascending: false }),
+      ]);
+
+      // Build content from user data
+      const content = {
+        profile: profileRes.data || {},
+        employment: employmentRes.data || [],
+        education: educationRes.data || [],
+        skills: skillsRes.data || [],
+        certifications: certificationsRes.data || [],
+        projects: projectsRes.data || [],
+      };
+
+      // Compose resume name
+      const resumeName = `${template?.name || "Resume"} - ${new Date().toLocaleDateString()}`;
+
+      // Create the resume
+      const { data: newResume, error } = await supabase
+        .from("resumes")
+        .insert({
+          user_id: session.user.id,
+          resume_name: resumeName,
+          content,
+          customization_overrides: { templateStyle: template?.style || "classic", primaryColor: "#2563eb" },
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      toast.success("Resume created!");
+      if (newResume?.id) {
+        setEditingResumeId(newResume.id);
+      } else {
+        setActiveTab("list");
+      }
+    } catch (error: any) {
+      console.error("Failed to create resume:", error);
+      toast.error("Failed to create resume");
+    }
   };
 
   const handleSaveResume = () => {
@@ -296,29 +338,122 @@ const Resumes = () => {
     return null;
   }
 
+  const isActive = (path: string) => location.pathname === path;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted">
+      {/* Skip Links for Screen Readers */}
+      <div className="sr-only focus-within:not-sr-only">
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:absolute focus:top-0 focus:left-0 focus:z-[100] focus:bg-primary focus:text-primary-foreground focus:p-4 focus:underline focus:outline-none focus:ring-2 focus:ring-primary-foreground"
+          tabIndex={0}
+        >
+          Skip to main content
+        </a>
+        <a
+          href="#document-nav"
+          className="sr-only focus:not-sr-only focus:absolute focus:top-0 focus:left-20 focus:z-[100] focus:bg-primary focus:text-primary-foreground focus:p-4 focus:underline focus:outline-none focus:ring-2 focus:ring-primary-foreground"
+          tabIndex={0}
+        >
+          Skip to document navigation
+        </a>
+        <a
+          href="#resume-tabs"
+          className="sr-only focus:not-sr-only focus:absolute focus:top-0 focus:left-40 focus:z-[100] focus:bg-primary focus:text-primary-foreground focus:p-4 focus:underline focus:outline-none focus:ring-2 focus:ring-primary-foreground"
+          tabIndex={0}
+        >
+          Skip to resume tabs
+        </a>
+      </div>
+      
       <AppNav />
       
-      <main className="container mx-auto px-2 sm:px-4 py-4 sm:py-6 md:py-12 lg:py-12 max-w-[95%]">
+      <div className="relative pt-16 min-h-screen">
+        {/* Sidebar Navigation */}
+        <aside id="document-nav" className="hidden lg:block w-60 bg-card border-2 border-primary fixed left-0 top-16 h-[calc(100vh-4rem)] overflow-y-auto z-30 rounded-r-lg">
+          <div className="p-4">
+            <div className="flex items-center gap-2 mb-4">
+              <FolderOpen className="h-5 w-5 text-primary flex-shrink-0" />
+              <h3 className="font-bold text-base text-foreground">Document Hub</h3>
+            </div>
+            <div className="space-y-1">
+              {docManagementNavigation.map((item, index) => {
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={index}
+                    to={item.to}
+                    className={cn(
+                      "flex items-center gap-2.5 px-3 py-2.5 rounded-lg transition-colors group",
+                      isActive(item.to)
+                        ? "bg-primary text-primary-foreground font-semibold"
+                        : "hover:bg-muted text-foreground hover:text-primary"
+                    )}
+                  >
+                    <Icon className="h-4 w-4 flex-shrink-0" />
+                    <span className="text-sm font-medium">{item.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        </aside>
+
+        {/* Mobile Sidebar Dropdown */}
+        <aside className="lg:hidden fixed left-0 top-16 right-0 bg-card/80 backdrop-blur-md border-2 border-primary z-40 rounded-b-lg mx-2">
+          <details className="group">
+            <summary className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-muted/50 transition-colors">
+              <div className="flex items-center gap-2">
+                <FolderOpen className="h-4 w-4 text-primary flex-shrink-0" />
+                <h3 className="font-bold text-base text-foreground">Document Hub</h3>
+              </div>
+              <svg className="h-5 w-5 transition-transform group-open:rotate-180 text-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </summary>
+            <div className="px-4 pb-4 space-y-1 border-t bg-background/80 backdrop-blur-md">
+              {docManagementNavigation.map((item, index) => {
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={index}
+                    to={item.to}
+                    className={cn(
+                      "flex items-center gap-2.5 px-3 py-2.5 rounded-lg transition-colors group",
+                      isActive(item.to)
+                        ? "bg-primary text-primary-foreground font-semibold"
+                        : "hover:bg-muted/50 text-foreground hover:text-primary"
+                    )}
+                  >
+                    <Icon className="h-4 w-4 flex-shrink-0" />
+                    <span className="text-sm font-medium">{item.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          </details>
+        </aside>
+
+        {/* Main Content Area */}
+        <main id="main-content" className="flex-1 lg:ml-60 overflow-x-hidden" tabIndex={-1}>
+          <div className="px-2 sm:px-4 md:px-6 py-8 md:py-10 max-w-full">
         {editingResumeId ? (
           // Show Resume Editor
-          <div className="space-y-4 sm:space-y-6">
+          <div>
             <Button
               variant="ghost"
               onClick={handleBackToList}
-              className="mb-2 sm:mb-2 w-full sm:w-auto"
+              className="mb-4 w-full sm:w-auto"
             >
               <ArrowLeft className={`${textSizes.icon} mr-2`} />
               <span className={textSizes.body}>Back to My Resumes</span>
             </Button>
-            <div className="bg-card rounded-lg border shadow-sm p-1 sm:p-1 md:p-1">
-              <ResumeEditor
-                userId={session.user.id}
-                resumeId={editingResumeId}
-                onSave={handleSaveResume}
-              />
-            </div>
+            <ResumeEditor
+              userId={session.user.id}
+              resumeId={editingResumeId}
+              onSave={handleSaveResume}
+            />
           </div>
         ) : (
           // Show Tabs
@@ -332,8 +467,8 @@ const Resumes = () => {
               </p>
             </div>
 
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="w-full h-14 grid grid-cols-2 sm:grid-cols-4 gap-2 bg-transparent p-0 border-b-2 border-primary/20">
+            <Tabs id="resume-tabs" value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="w-full h-auto flex flex-wrap gap-2 bg-transparent p-0 border-b-2 border-primary/20">
                 <TabsTrigger value="list" className={`h-full ${textSizes.body} font-semibold data-[state=active]:bg-transparent data-[state=active]:border-b-4 data-[state=active]:border-primary rounded-none data-[state=active]:shadow-none`}>
                   <span className="hidden sm:inline">My Resumes</span>
                   <span className="sm:hidden">Active</span>
@@ -343,48 +478,39 @@ const Resumes = () => {
                   <span className="hidden sm:inline">Archived</span>
                   <span className="sm:hidden">Archived</span>
                 </TabsTrigger>
-                <TabsTrigger value="templates" className={`h-full ${textSizes.body} font-semibold data-[state=active]:bg-transparent data-[state=active]:border-b-4 data-[state=active]:border-primary rounded-none data-[state=active]:shadow-none`}>
-                  Templates
-                </TabsTrigger>
+                {/* Templates tab removed */}
                 <TabsTrigger value="shared" className={`h-full ${textSizes.body} font-semibold data-[state=active]:bg-transparent data-[state=active]:border-b-4 data-[state=active]:border-primary rounded-none data-[state=active]:shadow-none`}>
                   <span className="hidden sm:inline">Shared Templates</span>
                   <span className="sm:hidden">Shared</span>
                 </TabsTrigger>
               </TabsList>
 
-              <TabsContent value="list" className="animate-fade-in">
-                <div className="bg-card rounded-lg border shadow-sm p-3 sm:p-4 md:p-6 lg:p-8">
-                  <ResumeList 
-                    userId={session.user.id} 
-                    onEditResume={handleEditResume}
-                    onCreateNew={() => setActiveTab("templates")}
-                    showArchived={false}
-                  />
-                </div>
-              </TabsContent>
+                <TabsContent value="list" className="animate-fade-in">
+                  <div className="bg-card rounded-lg border shadow-sm p-3 sm:p-4 md:p-6 lg:p-8">
+                    <ResumeList 
+                      userId={session.user.id} 
+                      onEditResume={handleEditResume}
+                      onCreateNew={handleCreateNewResume}
+                      showArchived={false}
+                    />
+                  </div>
+                </TabsContent>
 
-              <TabsContent value="archived" className="animate-fade-in">
-                <div className="bg-card rounded-lg border shadow-sm p-3 sm:p-4 md:p-6 lg:p-8">
-                  <ResumeList 
-                    userId={session.user.id} 
-                    onEditResume={handleEditResume}
-                    onCreateNew={() => setActiveTab("templates")}
-                    showArchived={true}
-                  />
-                </div>
-              </TabsContent>
 
-          <TabsContent value="templates" className="animate-fade-in space-y-6">
-            {/* Template Style Guide */}
-            <ResumeTemplatesShowcase />
+                <TabsContent value="archived" className="animate-fade-in">
+                  <div className="bg-card rounded-lg border shadow-sm p-3 sm:p-4 md:p-6 lg:p-8">
+                    <ResumeList 
+                      userId={session.user.id} 
+                      onEditResume={handleEditResume}
+                      onCreateNew={handleCreateNewResume}
+                      showArchived={true}
+                    />
+                  </div>
+                </TabsContent>
 
-            <div className="bg-card rounded-lg border shadow-sm p-3 sm:p-4 md:p-6 lg:p-8">
-              <ResumeTemplateSelector 
-                userId={session.user.id}
-                onSelectTemplate={handleCreateResume}
-              />
-            </div>
-          </TabsContent>
+              {/* Templates tab content removed */}
+
+
 
           <TabsContent value="shared" className="animate-fade-in">
             <div className="bg-card rounded-lg border shadow-sm p-3 sm:p-4 md:p-6 lg:p-8">
@@ -395,7 +521,7 @@ const Resumes = () => {
                   <FileText className={`h-12 w-12 sm:h-16 sm:w-16 mx-auto text-muted-foreground mb-4`} />
                   <h3 className={`${textSizes.subtitle} font-semibold mb-2 leading-tight`}>No Shared Templates Yet</h3>
                   <p className={`text-muted-foreground ${textSizes.body} leading-relaxed max-w-md mx-auto`}>
-                    Share templates with your team from the Templates tab
+                    {/* Share templates with your team from the Templates tab (removed) */}
                   </p>
                 </div>
               ) : (
@@ -548,7 +674,9 @@ const Resumes = () => {
             </AlertDialogContent>
           </AlertDialog>
         )}
-      </main>
+          </div>
+        </main>
+      </div>
     </div>
   );
 };

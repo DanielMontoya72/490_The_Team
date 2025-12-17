@@ -150,6 +150,7 @@ function Calendar({
               buttonVariants({ variant: "outline" }),
               "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 absolute left-0"
             )}
+            aria-label="Previous month"
           >
             <ChevronLeft className="h-4 w-4" />
           </button>
@@ -192,6 +193,7 @@ function Calendar({
               buttonVariants({ variant: "outline" }),
               "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 absolute right-0"
             )}
+            aria-label="Next month"
           >
             <ChevronRight className="h-4 w-4" />
           </button>

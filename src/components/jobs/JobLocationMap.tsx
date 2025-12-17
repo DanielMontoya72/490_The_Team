@@ -4,6 +4,7 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import { Card, CardContent } from '@/components/ui/card';
 import { Loader2, MapPin, Home } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { monitoredFetch } from '@/lib/apiMonitor';
 
 const MAPBOX_TOKEN = 'pk.eyJ1IjoibW9tYXJhMDQiLCJhIjoiY21mbXh6b3EyMDZ6ZDJqb2V3bGF2c3luaiJ9.M9p7upr0KyBjaUeRwjRsQw';
 
@@ -13,9 +14,9 @@ interface Job {
   company_name: string;
   location?: string;
   status: string;
-  work_type?: string;
-  salary_min?: number;
-  salary_max?: number;
+  job_type?: string;
+  salary_range_min?: number;
+  salary_range_max?: number;
 }
 
 interface GeocodedJob extends Job {
@@ -39,16 +40,18 @@ interface JobLocationMapProps {
 }
 
 const getStatusColor = (status: string): string => {
+  const normalizedStatus = status?.toLowerCase().replace(/[\s_-]+/g, '_') || '';
   const colors: Record<string, string> = {
     interested: '#3b82f6',
     applied: '#8b5cf6',
     phone_screen: '#f59e0b',
     interview: '#f97316',
     offer: '#22c55e',
+    offer_received: '#22c55e',
     rejected: '#ef4444',
     accepted: '#10b981',
   };
-  return colors[status] || '#6b7280';
+  return colors[normalizedStatus] || '#6b7280';
 };
 
 export function JobLocationMap({ jobs, onJobClick }: JobLocationMapProps) {
@@ -92,8 +95,10 @@ export function JobLocationMap({ jobs, onJobClick }: JobLocationMapProps) {
   // Geocode a single location using Mapbox
   const geocodeLocation = useCallback(async (location: string): Promise<{ lat: number; lng: number } | null> => {
     try {
-      const response = await fetch(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(location)}.json?access_token=${MAPBOX_TOKEN}&limit=1`
+      const response = await monitoredFetch(
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(location)}.json?access_token=${MAPBOX_TOKEN}&limit=1`,
+        undefined,
+        'mapbox'
       );
       const data = await response.json();
       
@@ -128,10 +133,10 @@ export function JobLocationMap({ jobs, onJobClick }: JobLocationMapProps) {
     const geocodeAllJobs = async () => {
       setLoading(true);
       
-      // Filter jobs that have a location (include all work types except pure remote)
+      // Filter jobs that have a location (include all job types except pure remote)
       const jobsWithLocation = jobs.filter(j => {
         const hasLocation = j.location && j.location.trim().length > 0;
-        const notRemote = j.work_type !== 'remote';
+        const notRemote = j.job_type?.toLowerCase() !== 'remote';
         return hasLocation && notRemote;
       });
 
@@ -207,10 +212,24 @@ export function JobLocationMap({ jobs, onJobClick }: JobLocationMapProps) {
 
   // Initialize map once loading is complete
   useEffect(() => {
-    if (loading || !mapContainer.current) return;
+    if (loading) {
+      console.log('Map init skipped: still loading');
+      return;
+    }
+    
+    if (!mapContainer.current) {
+      console.log('Map init skipped: no container ref');
+      return;
+    }
+
+    console.log('Map container dimensions:', {
+      width: mapContainer.current.offsetWidth,
+      height: mapContainer.current.offsetHeight,
+    });
 
     // Clean up existing map
     if (map.current) {
+      console.log('Removing existing map');
       map.current.remove();
       map.current = null;
     }
@@ -224,7 +243,7 @@ export function JobLocationMap({ jobs, onJobClick }: JobLocationMapProps) {
       center = [geocodedJobs[0].longitude, geocodedJobs[0].latitude];
     }
 
-    console.log(`Initializing map at center: [${center[0]}, ${center[1]}]`);
+    console.log(`Initializing map at center: [${center[0]}, ${center[1]}] with ${geocodedJobs.length} jobs`);
 
     try {
       mapboxgl.accessToken = MAPBOX_TOKEN;
@@ -234,6 +253,7 @@ export function JobLocationMap({ jobs, onJobClick }: JobLocationMapProps) {
         style: 'mapbox://styles/mapbox/light-v11',
         center,
         zoom: 4,
+        attributionControl: true,
       });
 
       map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
@@ -245,6 +265,10 @@ export function JobLocationMap({ jobs, onJobClick }: JobLocationMapProps) {
 
       map.current.on('error', (e) => {
         console.error('Mapbox error:', e);
+      });
+
+      map.current.on('idle', () => {
+        console.log('Map is idle (fully rendered)');
       });
     } catch (error) {
       console.error('Error initializing map:', error);
@@ -301,16 +325,21 @@ export function JobLocationMap({ jobs, onJobClick }: JobLocationMapProps) {
       
       const el = document.createElement('div');
       el.innerHTML = `
-        <div style="background-color: ${color}; width: 26px; height: 26px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.3); cursor: pointer; transition: transform 0.2s;">
+        <div class="marker-dot" style="background-color: ${color}; width: 26px; height: 26px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.3); cursor: pointer; transition: transform 0.2s;">
         </div>
       `;
       
+      // Set native title for hover tooltip
+      el.title = `${job.job_title} - ${job.company_name}`;
       el.style.cursor = 'pointer';
+      
       el.onmouseenter = () => {
-        el.querySelector('div')!.style.transform = 'scale(1.2)';
+        const dot = el.querySelector('.marker-dot') as HTMLElement;
+        if (dot) dot.style.transform = 'scale(1.2)';
       };
       el.onmouseleave = () => {
-        el.querySelector('div')!.style.transform = 'scale(1)';
+        const dot = el.querySelector('.marker-dot') as HTMLElement;
+        if (dot) dot.style.transform = 'scale(1)';
       };
 
       const popupHtml = `
@@ -406,7 +435,11 @@ export function JobLocationMap({ jobs, onJobClick }: JobLocationMapProps) {
       </Card>
 
       <Card className="overflow-hidden">
-        <div ref={mapContainer} className="h-[500px] w-full" />
+        <div 
+          ref={mapContainer} 
+          className="h-[500px] w-full" 
+          style={{ minHeight: '500px' }}
+        />
       </Card>
 
       <Card>

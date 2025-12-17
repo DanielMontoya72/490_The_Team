@@ -436,22 +436,26 @@ export function RelationshipMaintenance() {
         </div>
 
         <Tabs defaultValue="birthdays" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="birthdays" className="gap-2">
-              <Cake className="h-4 w-4" />
-              Birthdays
+          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 h-auto p-1 bg-muted rounded-lg">
+            <TabsTrigger value="birthdays" className="gap-1 lg:gap-2 text-xs lg:text-sm px-2 lg:px-3 py-2 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-md">
+              <Cake className="h-3 w-3 lg:h-4 lg:w-4" />
+              <span className="hidden sm:inline">Birthdays</span>
+              <span className="sm:hidden">BD</span>
             </TabsTrigger>
-            <TabsTrigger value="checkins" className="gap-2">
-              <Bell className="h-4 w-4" />
-              Check-Ins
+            <TabsTrigger value="checkins" className="gap-1 lg:gap-2 text-xs lg:text-sm px-2 lg:px-3 py-2 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-md">
+              <Bell className="h-3 w-3 lg:h-4 lg:w-4" />
+              <span className="hidden sm:inline">Check-Ins</span>
+              <span className="sm:hidden">CI</span>
             </TabsTrigger>
-            <TabsTrigger value="health" className="gap-2">
-              <Heart className="h-4 w-4" />
-              Relationship Health
+            <TabsTrigger value="health" className="gap-1 lg:gap-2 text-xs lg:text-sm px-2 lg:px-3 py-2 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-md">
+              <Heart className="h-3 w-3 lg:h-4 lg:w-4" />
+              <span className="hidden sm:inline">Relationship Health</span>
+              <span className="sm:hidden">Health</span>
             </TabsTrigger>
-            <TabsTrigger value="impact" className="gap-2">
-              <Award className="h-4 w-4" />
-              Impact Tracking
+            <TabsTrigger value="impact" className="gap-1 lg:gap-2 text-xs lg:text-sm px-2 lg:px-3 py-2 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-md">
+              <Award className="h-3 w-3 lg:h-4 lg:w-4" />
+              <span className="hidden sm:inline">Impact Tracking</span>
+              <span className="sm:hidden">Impact</span>
             </TabsTrigger>
           </TabsList>
 
@@ -486,13 +490,13 @@ export function RelationshipMaintenance() {
                         const daysUntil = Math.ceil((birthdayThisYear.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
                         return (
-                          <div key={contact.id} className="flex items-center justify-between p-4 border rounded-lg">
-                            <div className="flex items-center gap-4">
-                              <div className="flex items-center justify-center w-12 h-12 rounded-full bg-pink-500/10">
-                                <Cake className="h-6 w-6 text-pink-500" />
+                          <div key={contact.id} className="flex items-center justify-between p-3 sm:p-4 border rounded-lg w-full max-w-full overflow-hidden">
+                            <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
+                              <div className="flex items-center justify-center w-8 h-8 sm:w-12 sm:h-12 rounded-full bg-pink-500/10 flex-shrink-0">
+                                <Cake className="h-4 w-4 sm:h-6 sm:w-6 text-pink-500" />
                               </div>
-                              <div>
-                                <div className="font-semibold">
+                              <div className="min-w-0 flex-1">
+                                <div className="font-semibold text-sm sm:text-base break-words">
                                   {contact.first_name} {contact.last_name}
                                 </div>
                                 <div className="text-sm text-muted-foreground">

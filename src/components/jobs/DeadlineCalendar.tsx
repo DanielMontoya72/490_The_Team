@@ -117,13 +117,13 @@ export function DeadlineCalendar({ jobs, onViewJob }: DeadlineCalendarProps) {
 
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <Button variant="outline" size="icon" onClick={prevMonth}>
+            <Button variant="outline" size="icon" onClick={prevMonth} aria-label="Previous month">
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <h3 className="text-xl font-semibold">
+            <div className="text-xl font-semibold">
               {monthNames[month]} {year}
-            </h3>
-            <Button variant="outline" size="icon" onClick={nextMonth}>
+            </div>
+            <Button variant="outline" size="icon" onClick={nextMonth} aria-label="Next month">
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>

@@ -418,25 +418,25 @@ export function ApplicationSuccessAnalysis() {
 
       {/* Main Analysis Tabs */}
       <Tabs defaultValue="breakdown" className="space-y-4">
-        <TabsList className="grid grid-cols-5 w-full max-w-2xl">
-          <TabsTrigger value="breakdown" className="gap-1">
-            <PieChartIcon className="h-4 w-4" />
+        <TabsList className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 w-full max-w-2xl">
+          <TabsTrigger value="breakdown" className="gap-1 text-xs sm:text-sm px-1 sm:px-2">
+            <PieChartIcon className="h-4 w-4 hidden sm:inline" />
             Breakdown
           </TabsTrigger>
-          <TabsTrigger value="patterns" className="gap-1">
-            <Activity className="h-4 w-4" />
+          <TabsTrigger value="patterns" className="gap-1 text-xs sm:text-sm px-1 sm:px-2">
+            <Activity className="h-4 w-4 hidden sm:inline" />
             Patterns
           </TabsTrigger>
-          <TabsTrigger value="materials" className="gap-1">
-            <FileText className="h-4 w-4" />
+          <TabsTrigger value="materials" className="gap-1 text-xs sm:text-sm px-1 sm:px-2">
+            <FileText className="h-4 w-4 hidden sm:inline" />
             Materials
           </TabsTrigger>
-          <TabsTrigger value="timing" className="gap-1">
-            <Clock className="h-4 w-4" />
+          <TabsTrigger value="timing" className="gap-1 text-xs sm:text-sm px-1 sm:px-2">
+            <Clock className="h-4 w-4 hidden sm:inline" />
             Timing
           </TabsTrigger>
-          <TabsTrigger value="recommendations" className="gap-1">
-            <Lightbulb className="h-4 w-4" />
+          <TabsTrigger value="recommendations" className="gap-1 text-xs sm:text-sm px-1 sm:px-2">
+            <Lightbulb className="h-4 w-4 hidden sm:inline" />
             Insights
           </TabsTrigger>
         </TabsList>
@@ -462,7 +462,7 @@ export function ApplicationSuccessAnalysis() {
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis type="number" domain={[0, 100]} />
                       <YAxis dataKey="industry" type="category" width={100} tick={{ fontSize: 12 }} />
-                      <Tooltip formatter={(value: number) => `${value.toFixed(1)}%`} />
+                      <Tooltip formatter={(value: number) => `${value.toFixed(1)}%`} cursor={false} />
                       <Legend />
                       <Bar dataKey="interviewRate" name="Interview %" fill="hsl(var(--primary))" />
                       <Bar dataKey="successRate" name="Success %" fill="hsl(var(--chart-2))" />
@@ -504,10 +504,6 @@ export function ApplicationSuccessAnalysis() {
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
                       </Pie>
-                      <Tooltip formatter={(value: number, name: string, props: any) => [
-                        `${props.payload.successRate.toFixed(1)}% success`,
-                        props.payload.size
-                      ]} />
                       <Legend />
                     </PieChart>
                   </ResponsiveContainer>
@@ -534,7 +530,17 @@ export function ApplicationSuccessAnalysis() {
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="roleType" tick={{ fontSize: 11 }} />
                       <YAxis domain={[0, 100]} />
-                      <Tooltip formatter={(value: number) => `${value.toFixed(1)}%`} />
+                      <Tooltip 
+                        formatter={(value: number) => `${value.toFixed(1)}%`} 
+                        cursor={false}
+                        contentStyle={{ 
+                          backgroundColor: 'hsl(var(--background) / 0.8)',
+                          backdropFilter: 'blur(12px)',
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: '8px'
+                        }}
+                        labelStyle={{ color: 'hsl(var(--foreground))' }}
+                      />
                       <Legend />
                       <Bar dataKey="interviewRate" name="Interview %" fill="hsl(var(--primary))" />
                       <Bar dataKey="successRate" name="Success %" fill="hsl(var(--chart-2))" />
@@ -557,13 +563,43 @@ export function ApplicationSuccessAnalysis() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
+                <style>
+                  {`
+                    .recharts-surface { background: transparent !important; fill: transparent !important; }
+                    .recharts-cartesian-grid-bg { fill: transparent !important; }
+                    .recharts-wrapper { background: transparent !important; }
+                    .recharts-cartesian-grid rect { fill: transparent !important; }
+                    .recharts-bar-rectangle:hover { opacity: 1 !important; }
+                    .recharts-active-bar { opacity: 1 !important; }
+                    .recharts-bar { opacity: 1 !important; }
+                    .recharts-layer:hover { background: transparent !important; }
+                    .recharts-rectangle:hover { fill-opacity: 1 !important; }
+                  `}
+                </style>
                 {sourceData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={250}>
-                    <BarChart data={sourceData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="source" tick={{ fontSize: 11 }} />
-                      <YAxis domain={[0, 100]} />
-                      <Tooltip formatter={(value: number) => `${value.toFixed(1)}%`} />
+                  <ResponsiveContainer width="100%" height={250} style={{ backgroundColor: 'transparent' }}>
+                    <BarChart 
+                      data={sourceData} 
+                      style={{ backgroundColor: 'transparent' }}
+                      margin={{ top: 5, right: 5, left: 5, bottom: 5 }}
+                    >
+                      <defs>
+                        <rect id="backgroundRect" width="100%" height="100%" fill="transparent"/>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                      <XAxis dataKey="source" tick={{ fontSize: 11, fill: 'hsl(var(--foreground))' }} />
+                      <YAxis domain={[0, 100]} tick={{ fill: 'hsl(var(--foreground))' }} />
+                      <Tooltip 
+                        formatter={(value: number) => `${value.toFixed(1)}%`} 
+                        cursor={false}
+                        contentStyle={{ 
+                          backgroundColor: 'hsl(var(--background) / 0.8)',
+                          backdropFilter: 'blur(12px)',
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: '8px'
+                        }}
+                        labelStyle={{ color: 'hsl(var(--foreground))' }}
+                      />
                       <Legend />
                       <Bar dataKey="interviewRate" name="Interview %" fill="hsl(var(--primary))" />
                       <Bar dataKey="successRate" name="Success %" fill="hsl(var(--chart-2))" />
@@ -916,7 +952,17 @@ export function ApplicationSuccessAnalysis() {
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="day" tick={{ fontSize: 11 }} />
                       <YAxis domain={[0, 100]} />
-                      <Tooltip formatter={(value: number) => `${value.toFixed(1)}%`} />
+                      <Tooltip 
+                        formatter={(value: number) => `${value.toFixed(1)}%`} 
+                        cursor={false}
+                        contentStyle={{ 
+                          backgroundColor: 'hsl(var(--background) / 0.8)',
+                          backdropFilter: 'blur(12px)',
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: '8px'
+                        }}
+                        labelStyle={{ color: 'hsl(var(--foreground))' }}
+                      />
                       <Legend />
                       <Bar dataKey="interviewRate" name="Interview %" fill="hsl(var(--primary))" />
                       <Bar dataKey="successRate" name="Success %" fill="hsl(var(--chart-2))" />
@@ -942,7 +988,17 @@ export function ApplicationSuccessAnalysis() {
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="hour" tick={{ fontSize: 10 }} angle={-45} textAnchor="end" height={80} />
                       <YAxis domain={[0, 100]} />
-                      <Tooltip formatter={(value: number) => `${value.toFixed(1)}%`} />
+                      <Tooltip 
+                        formatter={(value: number) => `${value.toFixed(1)}%`} 
+                        cursor={false}
+                        contentStyle={{ 
+                          backgroundColor: 'hsl(var(--background) / 0.8)',
+                          backdropFilter: 'blur(12px)',
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: '8px'
+                        }}
+                        labelStyle={{ color: 'hsl(var(--foreground))' }}
+                      />
                       <Legend />
                       <Bar dataKey="interviewRate" name="Interview %" fill="hsl(var(--primary))" />
                       <Bar dataKey="successRate" name="Success %" fill="hsl(var(--chart-2))" />

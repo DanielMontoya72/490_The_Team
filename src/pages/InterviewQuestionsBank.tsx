@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { AppNav } from "@/components/layout/AppNav";
+import { PreparationSidebar } from "@/components/layout/PreparationSidebar";
 import { INTERVIEW_QUESTIONS_BANK } from "@/data/seedData";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -36,16 +38,25 @@ const InterviewQuestionsBank = () => {
   );
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold flex items-center gap-2">
-          <MessageSquare className="h-8 w-8" />
-          Interview Questions Bank
-        </h1>
-        <p className="text-muted-foreground mt-2">
-          Practice with common interview questions across different categories
-        </p>
-      </div>
+    <>
+      <AppNav />
+      
+      <div className="flex min-h-screen bg-background pt-16">
+        <PreparationSidebar activeTab="questions-bank" />
+        
+        {/* Main Content */}
+        <main className="flex-1 overflow-x-hidden lg:ml-56">
+          <div className="h-full overflow-y-auto">
+            <div className="container mx-auto px-4 py-8 max-w-7xl lg:pt-0 pt-16">
+              <div className="mb-8">
+                <h1 className="text-3xl font-bold flex items-center gap-2">
+                  <MessageSquare className="h-8 w-8" />
+                  Interview Questions Bank
+                </h1>
+                <p className="text-muted-foreground mt-2">
+                  Practice with common interview questions across different categories
+                </p>
+              </div>
 
       <div className="relative max-w-md">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -109,7 +120,11 @@ const InterviewQuestionsBank = () => {
           </div>
         </TabsContent>
       </Tabs>
-    </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </>
   );
 };
 

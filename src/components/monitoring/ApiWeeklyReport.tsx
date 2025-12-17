@@ -219,7 +219,7 @@ export function ApiWeeklyReport() {
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-4 gap-4 text-sm">
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
                         <div>
                           <p className="text-muted-foreground">Success Rate</p>
                           <p className={`font-medium ${service.success_rate < 90 ? 'text-destructive' : 'text-green-600'}`}>

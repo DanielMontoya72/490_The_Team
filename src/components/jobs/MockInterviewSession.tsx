@@ -7,19 +7,20 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
-import { Play, ChevronRight, CheckCircle, Clock, Target, TrendingUp, Save } from "lucide-react";
+import { Play, ChevronRight, CheckCircle, Clock, Target, TrendingUp, Save, Briefcase } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
-interface MockInterviewSessionProps {
-  jobId: string;
+export interface MockInterviewSessionProps {
+  jobId?: string;
 }
 
-export const MockInterviewSession = ({ jobId }: MockInterviewSessionProps) => {
+export const MockInterviewSession = ({ jobId: propJobId }: MockInterviewSessionProps) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [selectedJobId, setSelectedJobId] = useState<string | undefined>(propJobId);
   const [sessionDialogOpen, setSessionDialogOpen] = useState(false);
   const [sessionName, setSessionName] = useState('');
   const [interviewFormat, setInterviewFormat] = useState<'behavioral' | 'technical' | 'case_study' | 'mixed'>('mixed');
@@ -28,10 +29,33 @@ export const MockInterviewSession = ({ jobId }: MockInterviewSessionProps) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [responses, setResponses] = useState<Record<number, string>>({});
 
+  const jobId = propJobId || selectedJobId;
+
+  // Fetch jobs for selector when no jobId provided
+  const { data: jobs } = useQuery({
+    queryKey: ['jobs-for-mock-interview'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
+      
+      const { data, error } = await supabase
+        .from('jobs')
+        .select('id, job_title, company_name')
+        .eq('user_id', user.id)
+        .eq('is_archived', false)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !propJobId,
+  });
+
   // Fetch existing sessions
   const { data: sessions } = useQuery({
     queryKey: ['mock-sessions', jobId],
     queryFn: async () => {
+      if (!jobId) return [];
       const { data, error } = await supabase
         .from('mock_interview_sessions')
         .select('*')
@@ -41,6 +65,7 @@ export const MockInterviewSession = ({ jobId }: MockInterviewSessionProps) => {
       if (error) throw error;
       return data;
     },
+    enabled: !!jobId,
   });
 
   // Generate new session
@@ -425,7 +450,7 @@ export const MockInterviewSession = ({ jobId }: MockInterviewSessionProps) => {
               </div>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <Card>
                   <CardContent className="pt-6">
                     <div className="text-2xl font-bold">{summary.completion_rate.toFixed(0)}%</div>
@@ -497,7 +522,7 @@ export const MockInterviewSession = ({ jobId }: MockInterviewSessionProps) => {
               {summary.star_analysis && (
                 <div>
                   <h4 className="font-semibold mb-3">STAR Method Usage</h4>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <div className="flex justify-between text-sm mb-1">
                         <span>Situation</span>
@@ -680,6 +705,43 @@ export const MockInterviewSession = ({ jobId }: MockInterviewSessionProps) => {
           </Card>
         )}
       </div>
+    );
+  }
+
+  // Show job selector if no job provided
+  if (!propJobId && !selectedJobId) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Briefcase className="h-5 w-5" />
+            Select a Job
+          </CardTitle>
+          <CardDescription>
+            Choose a job to practice interview questions for
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {jobs && jobs.length > 0 ? (
+            <Select onValueChange={setSelectedJobId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a job..." />
+              </SelectTrigger>
+              <SelectContent>
+                {jobs.map((job) => (
+                  <SelectItem key={job.id} value={job.id}>
+                    {job.job_title} at {job.company_name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <p className="text-muted-foreground text-sm">
+              No jobs found. Add a job first to practice mock interviews.
+            </p>
+          )}
+        </CardContent>
+      </Card>
     );
   }
 

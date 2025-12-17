@@ -188,25 +188,7 @@ export default function AnalyticsHub() {
                         </CardContent>
                       </Card>
 
-                      <Card className="cursor-pointer hover:shadow-lg transition-shadow">
-                        <CardHeader>
-                          <CardTitle className="flex items-center gap-2">
-                            <Activity className="h-5 w-5 text-primary" />
-                            Monitoring
-                          </CardTitle>
-                          <CardDescription>
-                            Real-time tracking and performance monitoring
-                          </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          <Link to="/monitoring-dashboard">
-                            <Button variant="outline" className="w-full">
-                              View Monitoring
-                            </Button>
-                          </Link>
-                        </CardContent>
-                      </Card>
-
+                
                       <Card className="cursor-pointer hover:shadow-lg transition-shadow">
                         <CardHeader>
                           <CardTitle className="flex items-center gap-2">

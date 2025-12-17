@@ -110,20 +110,21 @@ export function CampaignList() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="space-y-4 sm:space-y-6 w-full max-w-full overflow-hidden">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-bold">Your Campaigns</h2>
-          <p className="text-muted-foreground">Manage your networking campaigns and track progress</p>
+          <h2 className="text-xl sm:text-2xl font-bold">Your Campaigns</h2>
+          <p className="text-sm text-muted-foreground">Manage your networking campaigns and track progress</p>
         </div>
-        <Button onClick={() => setCreateDialogOpen(true)}>
+        <Button onClick={() => setCreateDialogOpen(true)} className="w-full sm:w-auto">
           <Plus className="h-4 w-4 mr-2" />
-          Create Campaign
+          <span className="hidden sm:inline">Create Campaign</span>
+          <span className="sm:hidden">Create</span>
         </Button>
       </div>
 
       {campaigns && campaigns.length > 0 ? (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 w-full max-w-full overflow-hidden">
           {campaigns.map((campaign) => {
             const goals = campaign.goals as { outreach_target?: number; response_target?: number; connection_target?: number };
             const outreachProgress = goals?.outreach_target 
@@ -136,51 +137,51 @@ export function CampaignList() {
             return (
               <Card 
                 key={campaign.id} 
-                className="cursor-pointer hover:border-primary transition-colors"
+                className="cursor-pointer hover:border-primary transition-colors w-full max-w-full overflow-hidden"
                 onClick={() => {
                   setSelectedCampaign(campaign);
                   setDetailsDialogOpen(true);
                 }}
               >
-                <CardHeader className="pb-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <CardTitle className="text-lg mb-2">{campaign.campaign_name}</CardTitle>
-                      <CardDescription className="line-clamp-2">
+                <CardHeader className="pb-3 sm:pb-4">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <CardTitle className="text-base sm:text-lg mb-2 break-words">{campaign.campaign_name}</CardTitle>
+                      <CardDescription className="line-clamp-2 text-xs sm:text-sm break-words">
                         {campaign.description || 'No description'}
                       </CardDescription>
                     </div>
-                    <Badge {...getStatusBadge(campaign.status)} className="ml-2">
+                    <Badge {...getStatusBadge(campaign.status)} className="ml-2 flex-shrink-0 text-xs">
                       {getStatusBadge(campaign.status).label}
                     </Badge>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-5">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Target className="h-4 w-4" />
-                    <span>{getCampaignTypeLabel(campaign.campaign_type)}</span>
+                <CardContent className="space-y-3 sm:space-y-5">
+                  <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                    <Target className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                    <span className="truncate">{getCampaignTypeLabel(campaign.campaign_type)}</span>
                   </div>
 
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Calendar className="h-4 w-4" />
-                    <span>
+                  <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                    <Calendar className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                    <span className="truncate">
                       {format(new Date(campaign.start_date), 'MMM dd, yyyy')}
                       {campaign.end_date && ` - ${format(new Date(campaign.end_date), 'MMM dd, yyyy')}`}
                     </span>
                   </div>
 
-                  <div className="space-y-4 pt-4 border-t">
-                    <div className="grid grid-cols-3 gap-3 text-center">
+                  <div className="space-y-3 sm:space-y-4 pt-3 sm:pt-4 border-t">
+                    <div className="grid grid-cols-3 gap-2 sm:gap-3 text-center">
                       <div className="space-y-1">
-                        <div className="text-2xl font-bold">{campaign.metrics?.outreach_sent || 0}</div>
+                        <div className="text-lg sm:text-2xl font-bold">{campaign.metrics?.outreach_sent || 0}</div>
                         <div className="text-xs text-muted-foreground">Outreach</div>
                       </div>
                       <div className="space-y-1">
-                        <div className="text-2xl font-bold">{campaign.metrics?.responses_received || 0}</div>
+                        <div className="text-lg sm:text-2xl font-bold">{campaign.metrics?.responses_received || 0}</div>
                         <div className="text-xs text-muted-foreground">Responses</div>
                       </div>
                       <div className="space-y-1">
-                        <div className="text-2xl font-bold">{Math.round(campaign.response_rate || 0)}%</div>
+                        <div className="text-lg sm:text-2xl font-bold">{Math.round(campaign.response_rate || 0)}%</div>
                         <div className="text-xs text-muted-foreground">Rate</div>
                       </div>
                     </div>

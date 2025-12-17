@@ -1,23 +1,117 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { User, Settings, Briefcase, FileText, Mail, TrendingUp, BookOpen, Users, Cake, PhoneCall, Rocket, ArrowRight, Zap } from "lucide-react";
+import { User, Settings, Briefcase, FileText, Mail, TrendingUp, BookOpen, Users, Zap, HelpCircle, Bell, Calendar } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { AppNav } from "@/components/layout/AppNav";
-import { DashboardCard } from "@/components/ui/dashboard-card";
-import { GeneralizedToDoList } from "@/components/jobs/GeneralizedToDoList";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { DashboardCalendar } from "@/components/dashboard/DashboardCalendar";
-import { Target, Bell, Calendar } from "lucide-react";
-import { format, differenceInDays, parseISO, isBefore, addYears, isAfter } from "date-fns";
-import { FollowUpNotificationWidget } from "@/components/jobs/FollowUpNotificationWidget";
+import { format, differenceInDays, parseISO, isBefore, addYears } from "date-fns";
+import { GettingStartedPopup } from "@/components/dashboard/GettingStartedPopup";
+import { ProfileSetupPopup } from "@/components/profile/ProfileSetupPopup";
+
+// Lazy load heavy components
+const DashboardCalendar = lazy(() => import("@/components/dashboard/DashboardCalendar").then(module => ({ default: module.DashboardCalendar })));
+const GeneralizedToDoList = lazy(() => import("@/components/jobs/GeneralizedToDoList").then(module => ({ default: module.GeneralizedToDoList })));
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const [session, setSession] = useState(null);
+  const [showGettingStarted, setShowGettingStarted] = useState(false);
+  const [showProfileSetup, setShowProfileSetup] = useState(false);
+
+  // Check if user should see getting started popup
+  const { data: userPreferences } = useQuery({
+    queryKey: ['user-preferences', session?.user?.id],
+    enabled: !!session?.user?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('user_preferences')
+        .select('has_seen_getting_started, created_at')
+        .eq('user_id', session.user.id)
+        .single();
+      
+      if (error && error.code !== 'PGRST116') throw error;
+      return data;
+    }
+  });
+
+  // Check if user has any jobs or resumes (indicating they're not completely new)
+  const { data: userActivity } = useQuery({
+    queryKey: ['user-activity', session?.user?.id],
+    enabled: !!session?.user?.id,
+    queryFn: async () => {
+      const [jobsResult, resumesResult] = await Promise.all([
+        supabase.from('jobs').select('id').eq('user_id', session.user.id).limit(1),
+        supabase.from('resumes').select('id').eq('user_id', session.user.id).limit(1)
+      ]);
+      
+      return {
+        hasJobs: (jobsResult.data?.length || 0) > 0,
+        hasResumes: (resumesResult.data?.length || 0) > 0
+      };
+    }
+  });
+
+  // Check if user's profile is complete
+  const { data: profileData } = useQuery({
+    queryKey: ['profile-completion', session?.user?.id],
+    enabled: !!session?.user?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('first_name, last_name, phone, location, about_me')
+        .eq('id', session.user.id)
+        .single();
+      
+      if (error && error.code !== 'PGRST116') throw error;
+      
+      // Check if essential profile fields are complete
+      const isComplete = data && 
+        data.first_name && 
+        data.last_name && 
+        data.phone && 
+        data.location;
+      
+      return { profile: data, isComplete };
+    }
+  });
+
+  // Show getting started popup for new users
+  useEffect(() => {
+    if (session?.user?.id && userPreferences !== undefined && userActivity !== undefined) {
+      const hasSeenGettingStarted = userPreferences?.has_seen_getting_started;
+      const isNewUser = !userActivity.hasJobs && !userActivity.hasResumes;
+      
+      if (!hasSeenGettingStarted && isNewUser) {
+        // Delay showing popup slightly for better UX
+        const timer = setTimeout(() => {
+          setShowGettingStarted(true);
+        }, 1000);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [session, userPreferences, userActivity]);
+
+  // Show profile setup popup for users with incomplete profiles
+  useEffect(() => {
+    if (session?.user?.id && userPreferences !== undefined && profileData !== undefined) {
+      const hasSeenProfileSetup = userPreferences?.has_seen_profile_setup;
+      const hasSeenGettingStarted = userPreferences?.has_seen_getting_started;
+      const profileIncomplete = !profileData?.isComplete;
+      
+      // Show profile setup popup if:
+      // 1. User hasn't seen profile setup popup before
+      // 2. Profile is incomplete
+      // 3. User has seen getting started (or is not new) - don't show both popups at once
+      if (!hasSeenProfileSetup && profileIncomplete && hasSeenGettingStarted) {
+        const timer = setTimeout(() => {
+          setShowProfileSetup(true);
+        }, 1500); // Slight delay for better UX
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [session, userPreferences, profileData]);
 
   // Fetch goals data
   const { data: goals } = useQuery({
@@ -229,111 +323,98 @@ const Dashboard = () => {
     return null;
   }
 
-  const dashboardCards = [
-    {
-      title: "Profile",
-      description: "Manage your professional profile",
-      icon: User,
-      path: "/profile-enhanced",
-      variant: "purple"
-    },
-    {
-      title: "Jobs",
-      description: "Track and manage job applications",
-      icon: Briefcase,
-      path: "/jobs",
-      variant: "pink"
-    },
-    {
-      title: "Interview Preparation",
-      description: "Track your job search performance",
-      icon: TrendingUp,
-      path: "/performance-improvement",
-      variant: "yellow"
-    },
-    {
-      title: "Skills",
-      description: "Develop and track your skills",
-      icon: BookOpen,
-      path: "/skill-development",
-      variant: "purple"
-    },
-    {
-      title: "Resumes",
-      description: "Create and manage resumes",
-      icon: FileText,
-      path: "/resumes",
-      variant: "pink"
-    },
-    {
-      title: "Cover Letters",
-      description: "Create and manage cover letters",
-      icon: Mail,
-      path: "/cover-letters",
-      variant: "yellow"
-    },
-    {
-      title: "Networking",
-      description: "Manage contacts, campaigns, mentors & teams",
-      icon: Users,
-      path: "/networking",
-      variant: "purple"
-    },
-    {
-      title: "Settings",
-      description: "Account settings and preferences",
-      icon: Settings,
-      path: "/settings",
-      variant: "pink"
-    }
-  ];
-
   // Calculate goals stats
   const activeGoals = goals?.filter(g => g.status === 'active') || [];
-  const completedGoals = goals?.filter(g => g.status === 'completed') || [];
   const totalProgress = activeGoals.length > 0 
     ? activeGoals.reduce((sum, g) => sum + (g.current_progress || 0), 0) / activeGoals.length 
     : 0;
 
   const quickActions = [
-    { title: "Profile", icon: User, path: "/profile-enhanced", variant: "purple" },
+    { title: "Profile", icon: User, path: "/profile-settings", variant: "purple" },
     { title: "Jobs", icon: Briefcase, path: "/jobs", variant: "pink" },
-    { title: "Interview Prep", icon: TrendingUp, path: "/performance-improvement", variant: "yellow" },
-    { title: "Skills", icon: BookOpen, path: "/skill-development", variant: "purple" },
+    { title: "Interview Prep", icon: TrendingUp, path: "/preparation-hub", variant: "yellow" },
+    { title: "Skills", icon: BookOpen, path: "/preparation-hub?tab=skills", variant: "purple" },
     { title: "Resumes", icon: FileText, path: "/resumes", variant: "pink" },
     { title: "Cover Letters", icon: Mail, path: "/cover-letters", variant: "yellow" },
     { title: "Networking", icon: Users, path: "/networking", variant: "purple" },
-    { title: "Settings", icon: Settings, path: "/settings", variant: "pink" }
+    { title: "FAQ", icon: HelpCircle, path: "/faq", variant: "pink" },
+    { title: "Settings", icon: Settings, path: "/settings", variant: "yellow" }
   ];
 
   return (
     <>
+      {/* Getting Started Popup for New Users */}
+      <GettingStartedPopup 
+        isOpen={showGettingStarted}
+        onClose={() => setShowGettingStarted(false)}
+        userSession={session}
+      />
+
+      {/* Profile Setup Popup for Users with Incomplete Profiles */}
+      <ProfileSetupPopup 
+        isOpen={showProfileSetup}
+        onClose={() => setShowProfileSetup(false)}
+        userSession={session}
+      />
+
+      {/* Skip Links for Screen Readers */}
+      <div className="sr-only focus-within:not-sr-only">
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:absolute focus:top-0 focus:left-0 focus:z-[100] focus:bg-primary focus:text-primary-foreground focus:p-4 focus:underline focus:outline-none focus:ring-2 focus:ring-primary-foreground"
+          tabIndex={0}
+        >
+          Skip to main content
+        </a>
+        <a
+          href="#quick-actions"
+          className="sr-only focus:not-sr-only focus:absolute focus:top-0 focus:left-20 focus:z-[100] focus:bg-primary focus:text-primary-foreground focus:p-4 focus:underline focus:outline-none focus:ring-2 focus:ring-primary-foreground"
+          tabIndex={0}
+        >
+          Skip to quick actions
+        </a>
+        <a
+          href="#key-metrics"
+          className="sr-only focus:not-sr-only focus:absolute focus:top-0 focus:left-40 focus:z-[100] focus:bg-primary focus:text-primary-foreground focus:p-4 focus:underline focus:outline-none focus:ring-2 focus:ring-primary-foreground"
+          tabIndex={0}
+        >
+          Skip to key metrics
+        </a>
+        <a
+          href="#calendar-section"
+          className="sr-only focus:not-sr-only focus:absolute focus:top-0 focus:left-60 focus:z-[100] focus:bg-primary focus:text-primary-foreground focus:p-4 focus:underline focus:outline-none focus:ring-2 focus:ring-primary-foreground"
+          tabIndex={0}
+        >
+          Skip to calendar and reminders
+        </a>
+      </div>
+      
       <AppNav />
       
       <div className="flex min-h-screen bg-gradient-to-br from-background to-muted pt-16">
         {/* Quick Actions Sidebar - Mobile Dropdown */}
-        <aside className="lg:hidden fixed left-0 top-16 right-0 bg-card/80 backdrop-blur-md border-b z-40">
+        <aside className="lg:hidden fixed left-0 top-16 right-0 bg-card/70 backdrop-blur-lg border-b border-primary/90 shadow-lg z-40">
           <details className="group">
-            <summary className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-muted/50 transition-colors">
-              <div className="flex items-center gap-2">
-                <Zap className="h-4 w-4 text-primary flex-shrink-0" />
-                <h3 className="font-bold text-base text-white">Quick Actions</h3>
+            <summary className="flex items-center justify-between px-6 py-4 cursor-pointer hover:bg-muted/50 transition-colors" aria-label="Toggle quick actions menu">
+              <div className="flex items-center gap-3">
+                <Zap className="h-5 w-5 text-primary flex-shrink-0" />
+                <h3 className="font-bold text-lg text-foreground">Quick Actions</h3>
               </div>
-              <svg className="h-5 w-5 transition-transform group-open:rotate-180 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="h-4 w-6 transition-transform group-open:rotate-180 text-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
               </svg>
             </summary>
-            <div className="px-4 pb-4 space-y-0.5 border-t bg-background/80 backdrop-blur-md">
+            <div className="px-6 pb-6 space-y-1 border-t bg-background/80 backdrop-blur-md">
               {quickActions.map((action, index) => {
                 const Icon = action.icon;
                 return (
                   <Link
                     key={index}
                     to={action.path}
-                    className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-muted/50 transition-colors group"
+                    className="flex items-center gap-4 px-4 py-3 rounded-lg hover:bg-muted/50 transition-colors group"
                   >
-                    <Icon className="h-4 w-4 text-white transition-colors flex-shrink-0" />
-                    <span className="text-sm font-medium text-white group-hover:text-primary transition-colors truncate">{action.title}</span>
+                    <Icon className="h-5 w-5 text-foreground transition-colors flex-shrink-0" />
+                    <span className="text-base font-medium text-foreground group-hover:text-primary transition-colors">{action.title}</span>
                   </Link>
                 );
               })}
@@ -342,23 +423,23 @@ const Dashboard = () => {
         </aside>
 
         {/* Quick Actions Sidebar - Desktop */}
-        <aside className="hidden lg:block w-52 bg-card border-r overflow-y-auto flex-shrink-0">
-          <div className="p-3 sticky top-16">
-            <div className="flex items-center gap-2 mb-3">
-              <Zap className="h-4 w-4 text-primary flex-shrink-0" />
-              <h3 className="font-bold text-base text-white">Quick Actions</h3>
+        <aside id="quick-actions" className="hidden lg:block w-72 flex-shrink-0">
+          <div className="fixed top-16 left-0 w-72 h-[calc(100vh-4rem)] bg-card/70 backdrop-blur-lg border-r border-primary/90 shadow-lg overflow-y-auto z-40 p-5">
+            <div className="flex items-center gap-3 mb-5">
+              <Zap className="h-5 w-5 text-primary flex-shrink-0" />
+              <h3 className="font-bold text-lg text-foreground">Quick Actions</h3>
             </div>
-            <div className="space-y-0.5">
+            <div className="space-y-1">
               {quickActions.map((action, index) => {
                 const Icon = action.icon;
                 return (
                   <Link
                     key={index}
                     to={action.path}
-                    className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-muted transition-colors group"
+                    className="flex items-center gap-4 px-4 py-3 rounded-lg hover:bg-muted transition-colors group"
                   >
-                    <Icon className="h-4 w-4 text-white transition-colors flex-shrink-0" />
-                    <span className="text-sm font-medium text-white group-hover:text-primary transition-colors truncate">{action.title}</span>
+                    <Icon className="h-5 w-5 text-foreground transition-colors flex-shrink-0" />
+                    <span className="text-base font-medium text-foreground group-hover:text-primary transition-colors">{action.title}</span>
                   </Link>
                 );
               })}
@@ -367,11 +448,11 @@ const Dashboard = () => {
         </aside>
         
         {/* Main Content Area */}
-        <main className="flex-1 w-full overflow-x-hidden lg:mt-0 mt-0">
-          <div className="px-6 md:px-8 py-6 md:py-8 max-w-[1600px] mx-auto">
+        <main id="main-content" className="flex-1 w-full overflow-x-hidden lg:mt-0 mt-0 min-h-screen" tabIndex={-1}>
+          <div className="px-4 md:px-6 lg:px-8 py-6 md:py-6 max-w-[1800px] mx-auto">
         {/* Personalized Header */}
-        <div className="mb-8 animate-fade-in">
-          <h1 className="text-2xl md:text-3xl font-bold mb-2">
+        <div className="mb-6 animate-fade-in pt-16 lg:pt-0">
+          <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-2">
             Welcome back{session?.user?.user_metadata?.full_name ? `, ${session.user.user_metadata.full_name.split(' ')[0]}` : ''}! 👋
           </h1>
           <p className="text-muted-foreground text-sm md:text-base">
@@ -380,7 +461,7 @@ const Dashboard = () => {
         </div>
 
         {/* Key Metrics Summary */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div id="key-metrics" className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <Card className="border-l-4 border-l-primary">
             <CardContent className="pt-4 pb-3">
               <p className="text-xs text-muted-foreground mb-1">Active Goals</p>
@@ -408,25 +489,27 @@ const Dashboard = () => {
         </div>
 
         {/* Calendar and Reminders */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div id="calendar-section" className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           {/* Calendar with All Events */}
           <Card className="border-2 border-accent/20 shadow-lg hover:shadow-xl transition-shadow">
             <CardHeader className="bg-gradient-to-r from-accent/10 to-primary/10 pb-3">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Calendar className="h-4 w-4 text-accent" />
+              <CardTitle className="flex items-center gap-2 text-base md:text-lg">
+                <Calendar className="h-4 w-4 md:h-5 md:w-5 text-accent" />
                 Calendar
               </CardTitle>
-              <CardDescription className="text-xs mt-1">All important dates</CardDescription>
+              <CardDescription className="text-xs md:text-sm mt-1">All important dates</CardDescription>
             </CardHeader>
             <CardContent className="pt-3">
-              <DashboardCalendar 
-                jobs={activeJobs || []} 
-                interviews={jobInterviews || []}
-                informationalInterviews={informationalInterviews || []}
-                deadlineReminders={deadlineReminders || []}
-                birthdays={contactsWithBirthdays || []}
-                onNavigate={navigate}
-              />
+              <Suspense fallback={<div className="flex items-center justify-center h-32 text-muted-foreground">Loading calendar...</div>}>
+                <DashboardCalendar 
+                  jobs={activeJobs || []} 
+                  interviews={jobInterviews || []}
+                  informationalInterviews={informationalInterviews || []}
+                  deadlineReminders={deadlineReminders || []}
+                  birthdays={contactsWithBirthdays || []}
+                  onNavigate={navigate}
+                />
+              </Suspense>
             </CardContent>
           </Card>
 
@@ -434,18 +517,18 @@ const Dashboard = () => {
           <Card className="border-2 border-secondary/20 shadow-lg hover:shadow-xl transition-shadow flex flex-col">
             <CardHeader className="bg-gradient-to-r from-secondary/10 to-accent/10 pb-3">
               <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <Bell className="h-4 w-4 text-secondary" />
+                <CardTitle className="flex items-center gap-2 text-base md:text-lg">
+                  <Bell className="h-4 w-4 md:h-5 md:w-5 text-secondary" />
                   Upcoming Reminders
                 </CardTitle>
                 <Badge variant="outline" className="font-normal text-xs">
                   {((contactsWithBirthdays?.length || 0) + (contactsNeedingCheckin?.length || 0) + (deadlineReminders?.length || 0) + (jobInterviews?.length || 0) + (informationalInterviews?.length || 0))} total
                 </Badge>
               </div>
-              <CardDescription className="text-xs mt-1">Don't miss important dates and connections</CardDescription>
+              <CardDescription className="text-xs md:text-sm mt-1">Don't miss important dates and connections</CardDescription>
             </CardHeader>
             <CardContent className="pt-4 flex-1 overflow-hidden flex flex-col">
-              <div className="space-y-4 max-h-[320px] overflow-y-auto flex-1 pr-1">
+              <div className="space-y-4 max-h-[340px] overflow-y-auto flex-1 pr-1">
               {/* Birthday Section */}
               {contactsWithBirthdays && contactsWithBirthdays.length > 0 && (
                 <div>
@@ -458,6 +541,10 @@ const Dashboard = () => {
                       key={`bday-${contact.id}`} 
                       className="flex items-center justify-between gap-3 p-2 bg-destructive/10 rounded-md text-xs border border-destructive/20 hover:bg-destructive/15 hover:border-destructive/30 transition-all cursor-pointer group"
                       onClick={() => navigate('/networking')}
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`View birthday details for ${contact.name} and navigate to networking page`}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate('/networking'); } }}
                     >
                       <div className="flex-1 min-w-0 pr-2">
                         <p className="font-medium truncate text-foreground leading-normal">{contact.name}</p>
@@ -484,6 +571,10 @@ const Dashboard = () => {
                       key={`checkin-${contact.id}`} 
                       className="flex items-center justify-between gap-3 p-2 bg-secondary/10 rounded-md text-xs border border-secondary/20 hover:bg-secondary/15 hover:border-secondary/30 transition-all cursor-pointer group"
                       onClick={() => navigate('/networking')}
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`View checkin details for ${contact.name} and navigate to networking page`}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate('/networking'); } }}
                     >
                       <div className="flex-1 min-w-0 pr-2">
                         <p className="font-medium truncate text-foreground leading-normal">{contact.name}</p>
@@ -510,6 +601,10 @@ const Dashboard = () => {
                       key={`job-interview-${interview.id}`} 
                       className="flex items-start justify-between gap-3 p-2 bg-primary/10 rounded-md text-xs border border-primary/20 hover:bg-primary/15 hover:border-primary/30 transition-all cursor-pointer group"
                       onClick={() => navigate('/jobs')}
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`View details for ${interview.jobs?.job_title || 'Interview'} at ${interview.jobs?.company_name || 'company'} and navigate to jobs page`}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate('/jobs'); } }}
                     >
                       <div className="flex-1 min-w-0 pr-2">
                         <p className="font-medium truncate text-foreground leading-normal">
@@ -537,6 +632,10 @@ const Dashboard = () => {
                       key={`info-interview-${interview.id}`} 
                       className="flex items-start justify-between gap-3 p-2 bg-primary/10 rounded-md text-xs border border-primary/20 hover:bg-primary/15 hover:border-primary/30 transition-all cursor-pointer group"
                       onClick={() => navigate('/networking')}
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`View details for informational interview with ${interview.candidate_name} and navigate to networking page`}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate('/networking'); } }}
                     >
                       <div className="flex-1 min-w-0 pr-2">
                         <p className="font-medium truncate text-foreground leading-normal">
@@ -620,20 +719,20 @@ const Dashboard = () => {
 
         {/* Today's Focus */}
         <div className="mb-4">
-          <h2 className="text-xl font-semibold flex items-center gap-2">
+          <h2 className="text-xl md:text-2xl font-semibold flex items-center gap-2">
             <span className="h-1.5 w-1.5 rounded-full bg-primary"></span>
             Today's Focus
           </h2>
-          <p className="text-sm text-muted-foreground mt-1 ml-4">Your most important tasks and updates</p>
+          <p className="text-sm md:text-base text-muted-foreground mt-1 ml-4">Your most important tasks and updates</p>
         </div>
 
         {/* Dashboard Layout: To-Do List */}
-        <div className="mb-12">
+        <div className="mb-8">
           {/* To-Do List */}
           <Card className="border-2 border-primary/30 shadow-lg hover:shadow-xl transition-shadow flex flex-col bg-gradient-to-br from-primary/5 via-secondary/5 to-accent/5">
             <CardHeader className="bg-gradient-to-r from-primary/15 via-secondary/10 to-accent/15 pb-3 border-b border-primary/10">
               <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2 text-base">
+                <CardTitle className="flex items-center gap-2 text-base md:text-lg">
                   <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-r from-primary to-secondary animate-pulse"></span>
                   ✅ Your Tasks
                 </CardTitle>
@@ -641,15 +740,18 @@ const Dashboard = () => {
                   Priority
                 </Badge>
               </div>
-              <CardDescription className="text-xs mt-1">Stay on top of your job search 🎯</CardDescription>
+              <CardDescription className="text-xs md:text-sm mt-1">Stay on top of your job search 🎯</CardDescription>
             </CardHeader>
             <CardContent className="pt-4 flex-1 overflow-hidden flex flex-col">
-              <div className="max-h-[320px] overflow-y-auto flex-1">
-                <GeneralizedToDoList compact />
+              <div className="max-h-[360px] overflow-y-auto flex-1">
+                <Suspense fallback={<div className="flex items-center justify-center h-32 text-muted-foreground">Loading tasks...</div>}>
+                  <GeneralizedToDoList compact />
+                </Suspense>
               </div>
               <button 
                 onClick={() => navigate('/jobs')}
-                className="mt-4 w-full text-xs text-center py-2 rounded-md bg-gradient-to-r from-primary/10 to-secondary/10 hover:from-primary/20 hover:to-secondary/20 text-primary font-medium transition-all border border-primary/20"
+                className="mt-4 w-full text-sm text-center py-3 rounded-md bg-gradient-to-r from-primary/10 to-secondary/10 hover:from-primary/20 hover:to-secondary/20 text-primary font-medium transition-all border border-primary/20"
+                aria-label="Navigate to Jobs page to view all tasks"
               >
                 View All Tasks →
               </button>

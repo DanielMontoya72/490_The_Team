@@ -127,7 +127,7 @@ export function ResponseLibraryList() {
       </div>
 
       <Tabs value={questionTypeFilter} onValueChange={setQuestionTypeFilter}>
-        <TabsList>
+        <TabsList className="grid grid-cols-1 sm:grid-cols-5 w-full">
           <TabsTrigger value="all">All ({responses?.length || 0})</TabsTrigger>
           <TabsTrigger value="behavioral">
             Behavioral ({responses?.filter(r => r.question_type === 'behavioral').length || 0})

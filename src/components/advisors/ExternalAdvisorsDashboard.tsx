@@ -57,10 +57,6 @@ export function ExternalAdvisorsDashboard() {
             Centralize all your career support relationships in one place
           </p>
         </div>
-        <Button onClick={() => setInviteDialogOpen(true)} size="lg">
-          <UserPlus className="h-5 w-5 mr-2" />
-          Invite Advisor
-        </Button>
       </div>
 
       {/* Quick Stats */}
@@ -158,12 +154,24 @@ export function ExternalAdvisorsDashboard() {
             </TabsList>
 
             <TabsContent value="advisors">
-              <AdvisorList 
-                advisors={advisors} 
-                loading={loading} 
-                onRefresh={fetchAdvisors}
-                onSelectAdvisor={setSelectedAdvisorId}
-              />
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-xl font-semibold">My Advisors</h2>
+                    <p className="text-sm text-muted-foreground">Manage your advisor relationships</p>
+                  </div>
+                  <Button onClick={() => setInviteDialogOpen(true)} size="default">
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    Invite Advisor
+                  </Button>
+                </div>
+                <AdvisorList 
+                  advisors={advisors} 
+                  loading={loading} 
+                  onRefresh={fetchAdvisors}
+                  onSelectAdvisor={setSelectedAdvisorId}
+                />
+              </div>
             </TabsContent>
 
             <TabsContent value="sessions">

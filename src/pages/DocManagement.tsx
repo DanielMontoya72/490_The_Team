@@ -5,11 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { FileText, Mail, FolderOpen, Download, FileCheck, Award, ExternalLink, Calendar, Share2, Eye, Edit, Link, Star, Trash2, Archive, ArchiveRestore, FlaskConical } from "lucide-react";
+import { FileText, Mail, FolderOpen, Download, FileCheck, Award, ExternalLink, Calendar, Share2, Eye, Edit, Link as LinkIcon, Star, Trash2, Archive, ArchiveRestore, FlaskConical, Layout, Book, Rocket, HelpCircle } from "lucide-react";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -23,22 +23,21 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { cn } from "@/lib/utils";
 
-// Document Management specific sidebar navigation
+// Document Management sidebar navigation - All items from Docs dropdown
 const docManagementNavigation = [
-  { to: "/doc-management", icon: FolderOpen, label: "Doc Management" },
-  { to: "/resumes", icon: FileText, label: "Resume Builder" },
-  { to: "/cover-letters", icon: Mail, label: "Cover Letter Builder" },
+  { to: "/doc-management", icon: Layout, label: "Doc Management" },
+  { to: "/resumes", icon: FileText, label: "Resumes" },
+  { to: "/cover-letters", icon: Mail, label: "Cover Letters" },
   { to: "/ab-testing", icon: FlaskConical, label: "A/B Testing" },
 ];
-
-// Expandable sections for document types
-const docManagementSections = [];
 
 export default function DocManagement() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const location = useLocation();
   const [exporting, setExporting] = useState(false);
   const [previewDoc, setPreviewDoc] = useState<any>(null);
   const [linkingDoc, setLinkingDoc] = useState<any>(null);
@@ -549,6 +548,43 @@ export default function DocManagement() {
     }
   };
 
+  const handleSetDefaultResume = async (resumeId: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      // First, unset any existing default resumes for this user
+      const { error: unsetError } = await supabase
+        .from('resumes')
+        .update({ is_default: false })
+        .eq('user_id', user.id)
+        .eq('is_default', true);
+
+      if (unsetError) throw unsetError;
+
+      // Then set the new default
+      const { error } = await supabase
+        .from('resumes')
+        .update({ is_default: true })
+        .eq('id', resumeId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Default Resume Updated",
+        description: "This resume is now your default",
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['resumes'] });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleExportReport = async () => {
     setExporting(true);
     try {
@@ -615,27 +651,92 @@ export default function DocManagement() {
     ...(coverLetters?.map(c => ({ ...c, type: 'cover_letter' })) || []),
   ].sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
 
+  const isActive = (path: string) => location.pathname === path;
+
   return (
     <div className="min-h-screen bg-background">
       <AppNav />
-      <div className="container mx-auto py-8 px-4">
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-3">
-              <FolderOpen className="h-8 w-8 text-primary" />
-              <h1 className="text-4xl font-bold">Document Management</h1>
+      
+      <div className="relative pt-16 min-h-screen bg-gradient-to-br from-background to-muted">
+        {/* Sidebar Navigation */}
+        <aside className="hidden lg:block w-60 bg-card border-2 border-yellow-400 fixed left-0 top-16 h-[calc(100vh-4rem)] overflow-y-auto z-30 rounded-r-lg">
+          <div className="p-4">
+            <div className="flex items-center gap-2 mb-4">
+              <FolderOpen className="h-5 w-5 text-primary flex-shrink-0" />
+              <h3 className="font-bold text-base text-white">Document Hub</h3>
             </div>
-            <Button onClick={handleExportReport} disabled={exporting} size="lg">
-              <Download className="h-4 w-4 mr-2" />
-              {exporting ? 'Exporting...' : 'Export Job Search Report'}
-            </Button>
+            <div className="space-y-1">
+              {docManagementNavigation.map((item, index) => {
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={index}
+                    to={item.to}
+                    className={cn(
+                      "flex items-center gap-2.5 px-3 py-2.5 rounded-lg transition-colors group",
+                      isActive(item.to)
+                        ? "bg-primary text-primary-foreground font-semibold"
+                        : "hover:bg-muted text-white hover:text-primary"
+                    )}
+                  >
+                    <Icon className="h-4 w-4 flex-shrink-0" />
+                    <span className="text-sm font-medium">{item.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        </aside>
+
+        {/* Mobile Sidebar Dropdown */}
+        <aside className="lg:hidden fixed left-0 top-16 right-0 bg-card/80 backdrop-blur-md border-2 border-yellow-400 z-40 rounded-b-lg mx-2">
+          <details className="group">
+            <summary className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-muted/50 transition-colors">
+              <div className="flex items-center gap-2">
+                <FolderOpen className="h-4 w-4 text-primary flex-shrink-0" />
+                <h3 className="font-bold text-base text-white">Document Hub</h3>
+              </div>
+              <svg className="h-5 w-5 transition-transform group-open:rotate-180 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </summary>
+            <div className="px-4 pb-4 space-y-1 border-t bg-background/80 backdrop-blur-md">
+              {docManagementNavigation.map((item, index) => {
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={index}
+                    to={item.to}
+                    className={cn(
+                      "flex items-center gap-2.5 px-3 py-2.5 rounded-lg transition-colors group",
+                      isActive(item.to)
+                        ? "bg-primary text-primary-foreground font-semibold"
+                        : "hover:bg-muted/50 text-white hover:text-primary"
+                    )}
+                  >
+                    <Icon className="h-4 w-4 flex-shrink-0" />
+                    <span className="text-sm font-medium">{item.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          </details>
+        </aside>
+
+        {/* Main Content Area */}
+        <main className="flex-1 lg:ml-60 overflow-x-hidden">
+          <div className="px-2 sm:px-4 md:px-6 py-8 md:py-10 max-w-full">
+        <div className="mb-8">
+          <div className="flex items-center gap-3 mb-2">
+            <FolderOpen className="h-8 w-8 text-primary" />
+            <h1 className="text-4xl font-bold">Document Management</h1>
           </div>
           <p className="text-muted-foreground text-lg">
             Organize and manage all your job search documents with version control
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 md:gap-4 mb-6">
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
@@ -672,11 +773,11 @@ export default function DocManagement() {
         </div>
 
         <Tabs defaultValue="all" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="all">All Documents</TabsTrigger>
-            <TabsTrigger value="resumes">Resumes</TabsTrigger>
-            <TabsTrigger value="cover-letters">Cover Letters</TabsTrigger>
-            <TabsTrigger value="archived">Archived</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-4 h-auto gap-0">
+            <TabsTrigger value="all" className="text-xs sm:text-sm px-1 sm:px-2">All Docs</TabsTrigger>
+            <TabsTrigger value="resumes" className="text-xs sm:text-sm px-1 sm:px-2">Resumes</TabsTrigger>
+            <TabsTrigger value="cover-letters" className="text-xs sm:text-sm px-1 sm:px-2">Cover Letters</TabsTrigger>
+            <TabsTrigger value="archived" className="text-xs sm:text-sm px-1 sm:px-2">Archived</TabsTrigger>
           </TabsList>
 
           <TabsContent value="all" className="space-y-4">
@@ -698,52 +799,52 @@ export default function DocManagement() {
                 ) : (
                   <div className="space-y-3">
                     {allDocuments.map((doc: any) => (
-                      <div key={doc.id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
+                      <div key={doc.id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors overflow-hidden">
+                        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+                          <div className="flex-1 min-w-0 overflow-hidden">
+                            <div className="flex items-center gap-2 mb-2 flex-wrap">
                               {doc.type === 'resume' ? (
-                                <FileText className="h-4 w-4 text-blue-500" />
+                                <FileText className="h-4 w-4 text-blue-500 flex-shrink-0" />
                               ) : (
-                                <Mail className="h-4 w-4 text-purple-500" />
+                                <Mail className="h-4 w-4 text-purple-500 flex-shrink-0" />
                               )}
-                              <h3 className="font-semibold">{doc.type === 'resume' ? (doc.title || doc.resume_name || 'Untitled') : (doc.version_name || 'Untitled')}</h3>
-                              <Badge variant="outline">
+                              <h3 className="font-semibold truncate break-words max-w-full">{doc.type === 'resume' ? (doc.title || doc.resume_name || 'Untitled') : (doc.version_name || 'Untitled')}</h3>
+                              <Badge variant="outline" className="flex-shrink-0">
                                 {doc.type === 'resume' ? 'Resume' : 'Cover Letter'}
                               </Badge>
                               {doc.version && (
-                                <Badge variant="secondary">v{doc.version}</Badge>
+                                <Badge variant="secondary" className="flex-shrink-0">v{doc.version}</Badge>
                               )}
                             </div>
-                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                              <span className="flex items-center gap-1">
+                            <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
+                              <span className="flex items-center gap-1 flex-shrink-0">
                                 <Calendar className="h-3 w-3" />
                                 Updated {format(new Date(doc.updated_at), 'MMM d, yyyy')}
                               </span>
                               {doc.linked_job_id && (
-                                <Badge variant="outline" className="text-xs">
+                                <Badge variant="outline" className="text-xs flex-shrink-0">
                                   <ExternalLink className="h-3 w-3 mr-1" />
                                   Linked to Job
                                 </Badge>
                               )}
                             </div>
                           </div>
-                          <div className="flex gap-2">
-                            <Button size="sm" variant="outline" onClick={() => handlePreview(doc)}>
-                              <Eye className="h-4 w-4 mr-1" />
-                              Preview
+                          <div className="flex gap-2 flex-wrap lg:flex-nowrap flex-shrink-0">
+                            <Button size="sm" variant="outline" onClick={() => handlePreview(doc)} className="flex-shrink-0">
+                              <Eye className="h-4 w-4 lg:mr-1" />
+                              <span className="hidden lg:inline">Preview</span>
                             </Button>
-                            <Button size="sm" variant="default" onClick={() => handleEdit(doc)}>
-                              <Edit className="h-4 w-4 mr-1" />
-                              Edit
+                            <Button size="sm" variant="default" onClick={() => handleEdit(doc)} className="flex-shrink-0">
+                              <Edit className="h-4 w-4 lg:mr-1" />
+                              <span className="hidden lg:inline">Edit</span>
                             </Button>
-                            <Button size="sm" variant="ghost" onClick={() => handleLinkToJobs(doc)}>
-                              <Link className="h-4 w-4" />
+                            <Button size="sm" variant="ghost" onClick={() => handleLinkToJobs(doc)} className="flex-shrink-0">
+                              <LinkIcon className="h-4 w-4" />
                             </Button>
-                            <Button size="sm" variant="ghost" onClick={() => handleArchiveDocument(doc)}>
+                            <Button size="sm" variant="ghost" onClick={() => handleArchiveDocument(doc)} className="flex-shrink-0">
                               <Archive className="h-4 w-4" />
                             </Button>
-                            <Button size="sm" variant="ghost" onClick={() => setDeletingDoc(doc)}>
+                            <Button size="sm" variant="ghost" onClick={() => setDeletingDoc(doc)} className="flex-shrink-0">
                               <Trash2 className="h-4 w-4 text-destructive" />
                             </Button>
                           </div>
@@ -780,11 +881,11 @@ export default function DocManagement() {
                   <div className="space-y-3">
                     {resumes.map((resume: any) => (
                       <div key={resume.id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <FileText className="h-4 w-4 text-blue-500" />
-                              <h3 className="font-semibold">{resume.title || resume.resume_name || 'Untitled Resume'}</h3>
+                        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex flex-wrap items-center gap-2 mb-2">
+                              <FileText className="h-4 w-4 text-blue-500 flex-shrink-0" />
+                              <h3 className="font-semibold break-words">{resume.title || resume.resume_name || 'Untitled Resume'}</h3>
                               {resume.version && (
                                 <Badge variant="secondary">v{resume.version}</Badge>
                               )}
@@ -796,7 +897,16 @@ export default function DocManagement() {
                               Updated {format(new Date(resume.updated_at), 'MMM d, yyyy')}
                             </p>
                           </div>
-                          <div className="flex gap-2">
+                          <div className="flex flex-wrap gap-2">
+                            <Button 
+                              size="sm" 
+                              variant={resume.is_default ? "default" : "outline"} 
+                              onClick={() => handleSetDefaultResume(resume.id)}
+                              title={resume.is_default ? "Default resume" : "Set as default"}
+                            >
+                              <Star className={`h-4 w-4 mr-1 ${resume.is_default ? 'fill-current' : ''}`} />
+                              {resume.is_default ? 'Default' : 'Set Default'}
+                            </Button>
                             <Button size="sm" variant="outline" onClick={() => handlePreview(resume)}>
                               <Eye className="h-4 w-4 mr-1" />
                               Preview
@@ -806,7 +916,7 @@ export default function DocManagement() {
                               Edit
                             </Button>
                             <Button size="sm" variant="ghost" onClick={() => handleLinkToJobs({ ...resume, type: 'resume' })}>
-                              <Link className="h-4 w-4" />
+                              <LinkIcon className="h-4 w-4" />
                             </Button>
                             <Button size="sm" variant="ghost" onClick={() => handleArchiveDocument({ ...resume, type: 'resume' })}>
                               <Archive className="h-4 w-4" />
@@ -848,11 +958,11 @@ export default function DocManagement() {
                   <div className="space-y-3">
                     {coverLetters.map((letter: any) => (
                       <div key={letter.id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <Mail className="h-4 w-4 text-purple-500" />
-                              <h3 className="font-semibold">{letter.version_name || 'Untitled Cover Letter'}</h3>
+                        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex flex-wrap items-center gap-2 mb-2">
+                              <Mail className="h-4 w-4 text-purple-500 flex-shrink-0" />
+                              <h3 className="font-semibold break-words">{letter.version_name || 'Untitled Cover Letter'}</h3>
                               {letter.is_default && (
                                 <Badge variant="default">Default</Badge>
                               )}
@@ -861,7 +971,7 @@ export default function DocManagement() {
                               Updated {format(new Date(letter.updated_at), 'MMM d, yyyy')}
                             </p>
                           </div>
-                          <div className="flex gap-2">
+                          <div className="flex flex-wrap gap-2">
                             <Button 
                               size="sm" 
                               variant={letter.is_default ? "default" : "outline"}
@@ -879,7 +989,7 @@ export default function DocManagement() {
                               Edit
                             </Button>
                             <Button size="sm" variant="ghost" onClick={() => handleLinkToJobs({ ...letter, type: 'cover_letter' })}>
-                              <Link className="h-4 w-4" />
+                              <LinkIcon className="h-4 w-4" />
                             </Button>
                             <Button size="sm" variant="ghost" onClick={() => handleArchiveDocument({ ...letter, type: 'cover_letter' })}>
                               <Archive className="h-4 w-4" />
@@ -918,15 +1028,15 @@ export default function DocManagement() {
                   <div className="space-y-3">
                     {archivedDocuments.map((doc: any) => (
                       <div key={doc.id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors opacity-75">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
+                        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex flex-wrap items-center gap-2 mb-2">
                               {doc.material_type === 'resume' ? (
-                                <FileText className="h-4 w-4 text-blue-500" />
+                                <FileText className="h-4 w-4 text-blue-500 flex-shrink-0" />
                               ) : (
-                                <Mail className="h-4 w-4 text-purple-500" />
+                                <Mail className="h-4 w-4 text-purple-500 flex-shrink-0" />
                               )}
-                              <h3 className="font-semibold">{doc.version_name || doc.file_name || 'Untitled'}</h3>
+                              <h3 className="font-semibold break-words">{doc.version_name || doc.file_name || 'Untitled'}</h3>
                               <Badge variant="outline">
                                 {doc.material_type === 'resume' ? 'Resume' : 'Cover Letter'}
                               </Badge>
@@ -936,7 +1046,7 @@ export default function DocManagement() {
                               Updated {format(new Date(doc.updated_at), 'MMM d, yyyy')}
                             </p>
                           </div>
-                          <div className="flex gap-2">
+                          <div className="flex flex-wrap gap-2">
                             <Button size="sm" variant="outline" onClick={() => handlePreview({ ...doc, type: doc.material_type })}>
                               <Eye className="h-4 w-4 mr-1" />
                               Preview
@@ -1046,7 +1156,7 @@ export default function DocManagement() {
           <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
-                <Link className="h-5 w-5" />
+                <LinkIcon className="h-5 w-5" />
                 Link to Jobs
               </DialogTitle>
               <DialogDescription>
@@ -1145,6 +1255,8 @@ export default function DocManagement() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+          </div>
+        </main>
       </div>
     </div>
   );

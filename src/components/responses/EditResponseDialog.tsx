@@ -185,7 +185,7 @@ export function EditResponseDialog({ response, open, onOpenChange }: EditRespons
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Skills (comma-separated)</Label>
               <Input
@@ -203,7 +203,7 @@ export function EditResponseDialog({ response, open, onOpenChange }: EditRespons
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Companies Used For</Label>
               <Input
@@ -226,7 +226,7 @@ export function EditResponseDialog({ response, open, onOpenChange }: EditRespons
               <CheckCircle className="h-4 w-4" />
               Track Outcome (Optional)
             </h4>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Interview Outcome</Label>
                 <Select value={outcome} onValueChange={setOutcome}>

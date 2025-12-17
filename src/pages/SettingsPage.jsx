@@ -193,7 +193,7 @@ const SettingsPage = () => {
         {sidebarContent}
       </LeftSidebar>
       
-      <main className="pt-20 md:pt-6 md:ml-64 w-full">
+      <main className="pt-16 md:pt-6 md:ml-64 w-full">
         <div className="container mx-auto px-4 py-8 md:py-12">
           <div className="text-center mb-8 animate-fade-in">
             <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-2 break-words">

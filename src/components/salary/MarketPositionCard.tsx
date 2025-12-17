@@ -108,7 +108,7 @@ export function MarketPositionCard({ analysis, currentCompensation, marketData }
           {marketData && (
             <div className="pt-4 border-t">
               <h4 className="font-medium mb-3">Market Reference Data</h4>
-              <div className="grid grid-cols-3 gap-4 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
                 <div>
                   <p className="text-muted-foreground">25th Percentile</p>
                   <p className="font-medium">${marketData.percentile_25?.toLocaleString() || '--'}</p>

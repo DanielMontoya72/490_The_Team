@@ -174,7 +174,7 @@ export function ApiQuotaGauges() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-2 text-sm">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-sm">
                     <div>
                       <p className="text-muted-foreground text-xs">Used</p>
                       <p className="font-medium">{quota.used.toLocaleString()}</p>

@@ -6,8 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { supabase } from '@/integrations/supabase/client';
-import { CheckCircle2, Briefcase, ExternalLink } from 'lucide-react';
-import { format } from 'date-fns';
+import { CheckCircle2, Briefcase, ExternalLink, User, Target, Clock } from 'lucide-react';
+import { format, isToday, isTomorrow, isPast } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -31,6 +31,20 @@ interface JobWithChecklist {
   sections: ChecklistSection[];
 }
 
+interface GeneralTodo {
+  id: string;
+  task: string;
+  description?: string;
+  status: 'pending' | 'in_progress' | 'completed' | 'cancelled';
+  priority: 'low' | 'medium' | 'high';
+  category?: string;
+  estimated_time?: string;
+  is_getting_started: boolean;
+  due_date?: string;
+  completed_at?: string;
+  created_at?: string;
+}
+
 interface GeneralizedToDoListProps {
   compact?: boolean;
 }
@@ -38,11 +52,38 @@ interface GeneralizedToDoListProps {
 export function GeneralizedToDoList({ compact = false }: GeneralizedToDoListProps) {
   const navigate = useNavigate();
   const [jobsWithChecklists, setJobsWithChecklists] = useState<JobWithChecklist[]>([]);
+  const [generalTodos, setGeneralTodos] = useState<GeneralTodo[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchJobsWithChecklists();
+    Promise.all([
+      fetchJobsWithChecklists(),
+      fetchGeneralTodos()
+    ]).finally(() => setLoading(false));
   }, []);
+
+  const fetchGeneralTodos = async () => {
+    try {
+      // Temporarily disabled until todos table is available
+      // const { data: { user } } = await supabase.auth.getUser();
+      // if (!user) return;
+
+      // const { data: todos, error } = await supabase
+      //   .from('todos')
+      //   .select('*')
+      //   .eq('user_id', user.id)
+      //   .in('status', ['pending', 'in_progress'])
+      //   .order('priority', { ascending: false })
+      //   .order('due_date', { ascending: true, nullsFirst: false })
+      //   .order('created_at', { ascending: true });
+
+      // if (error) throw error;
+      // setGeneralTodos(todos || []);
+      setGeneralTodos([]);
+    } catch (error) {
+      console.error('Error fetching general todos:', error);
+    }
+  };
 
   const fetchJobsWithChecklists = async () => {
     try {
@@ -62,7 +103,6 @@ export function GeneralizedToDoList({ compact = false }: GeneralizedToDoListProp
 
       if (!jobs || jobs.length === 0) {
         setJobsWithChecklists([]);
-        setLoading(false);
         return;
       }
 
@@ -132,8 +172,17 @@ export function GeneralizedToDoList({ compact = false }: GeneralizedToDoListProp
       setJobsWithChecklists(jobsWithChecklistsData);
     } catch (error) {
       console.error('Error fetching jobs with checklists:', error);
-    } finally {
-      setLoading(false);
+    }
+  };
+
+  const toggleGeneralTodo = async (todoId: string, currentStatus: string) => {
+    try {
+      // Temporarily disabled until todos table is properly set up
+      console.log('toggleGeneralTodo called but temporarily disabled');
+      toast.success('General todos feature coming soon!');
+    } catch (error) {
+      console.error('Error toggling general todo:', error);
+      toast.error('Failed to update task');
     }
   };
 
@@ -271,22 +320,43 @@ export function GeneralizedToDoList({ compact = false }: GeneralizedToDoListProp
     };
   };
 
+  const getPriorityIcon = (priority: string) => {
+    switch (priority) {
+      case 'high': return { color: 'text-red-600', bg: 'bg-red-100' };
+      case 'medium': return { color: 'text-yellow-600', bg: 'bg-yellow-100' };
+      case 'low': return { color: 'text-green-600', bg: 'bg-green-100' };
+      default: return { color: 'text-gray-600', bg: 'bg-gray-100' };
+    }
+  };
+
+  const getPriorityBadge = (priority: string) => {
+    switch (priority) {
+      case 'high': return 'bg-red-100 text-red-800 border-red-200';
+      case 'medium': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'low': return 'bg-green-100 text-green-800 border-green-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  const getDueDateDisplay = (dueDate?: string) => {
+    if (!dueDate) return null;
+    const date = new Date(dueDate);
+    
+    if (isToday(date)) {
+      return { text: 'Due today', color: 'text-red-600' };
+    } else if (isTomorrow(date)) {
+      return { text: 'Due tomorrow', color: 'text-orange-600' };
+    } else if (isPast(date)) {
+      return { text: 'Overdue', color: 'text-red-700 font-medium' };
+    } else {
+      return { text: `Due ${format(date, 'MMM d')}`, color: 'text-muted-foreground' };
+    }
+  };
+
   if (loading) {
     return (
       <div className={cn("text-center", compact ? "py-4" : "py-8")}>
-        <div className="text-sm text-muted-foreground">
-          Loading checklist items...
-        </div>
-      </div>
-    );
-  }
-
-  if (jobsWithChecklists.length === 0) {
-    return (
-      <div className={cn("text-center", compact ? "py-4" : "py-8")}>
-        <div className="text-sm text-muted-foreground">
-          No active job applications to track
-        </div>
+        <div className="text-sm text-muted-foreground">Loading tasks...</div>
       </div>
     );
   }
@@ -297,17 +367,45 @@ export function GeneralizedToDoList({ compact = false }: GeneralizedToDoListProp
     return stats.completed < stats.total;
   });
 
-  if (activeJobs.length === 0) {
+  // Sort general todos by priority and due date
+  const sortedTodos = [...generalTodos].sort((a, b) => {
+    // First by priority
+    const priorityOrder = { 'high': 3, 'medium': 2, 'low': 1 };
+    const priorityDiff = priorityOrder[b.priority] - priorityOrder[a.priority];
+    if (priorityDiff !== 0) return priorityDiff;
+    
+    // Then by due date (sooner first)
+    if (a.due_date && b.due_date) {
+      return new Date(a.due_date).getTime() - new Date(b.due_date).getTime();
+    }
+    if (a.due_date) return -1;
+    if (b.due_date) return 1;
+    
+    // Finally by creation date
+    return new Date(a.created_at || '').getTime() - new Date(b.created_at || '').getTime();
+  });
+
+  const totalGeneralTodos = generalTodos.length;
+  const completedGeneralTodos = generalTodos.filter(t => t.status === 'completed').length;
+  const totalStats = getTotalStats();
+  const grandTotal = {
+    completed: totalStats.completed + completedGeneralTodos,
+    total: totalStats.total + totalGeneralTodos
+  };
+
+  // Show empty state if no todos and no job checklists
+  if (sortedTodos.length === 0 && activeJobs.length === 0) {
     return (
       <div className={cn("text-center", compact ? "py-4" : "py-8")}>
         <div className="text-sm text-muted-foreground">
-          All checklist items complete!
+          No tasks at the moment
+        </div>
+        <div className="text-xs text-muted-foreground mt-1">
+          Great! You're all caught up.
         </div>
       </div>
     );
   }
-
-  const totalStats = getTotalStats();
 
   return (
     <div className="space-y-3">
@@ -316,114 +414,223 @@ export function GeneralizedToDoList({ compact = false }: GeneralizedToDoListProp
         <div className="flex items-center gap-2 mb-3">
           <Badge variant="outline" className="gap-1">
             <CheckCircle2 className="h-3 w-3" />
-            {totalStats.completed} / {totalStats.total} items complete
+            {grandTotal.completed} / {grandTotal.total} items complete
           </Badge>
         </div>
       )}
 
-      {/* Job accordions */}
-      <Accordion type="multiple" className="space-y-2">
-        {activeJobs.map((job, index) => {
-          const jobStats = getJobStats(job);
-          
-          // Assign colors based on index
-          const colorSchemes = [
-            { border: 'border-l-4 border-l-primary', bg: '', badge: 'bg-primary/10 border-primary/30 text-primary', icon: 'text-primary' },
-            { border: 'border-l-4 border-l-secondary', bg: '', badge: 'bg-secondary/10 border-secondary/30 text-secondary', icon: 'text-secondary' },
-            { border: 'border-l-4 border-l-accent', bg: '', badge: 'bg-accent/10 border-accent/30 text-accent', icon: 'text-accent' },
-            { border: 'border-l-4 border-l-destructive', bg: '', badge: 'bg-destructive/10 border-destructive/30 text-destructive', icon: 'text-destructive' },
-          ];
-          const colorScheme = colorSchemes[index % colorSchemes.length];
-          
-          return (
-            <AccordionItem 
-              key={job.id} 
-              value={job.id}
-              className={cn("border rounded-lg px-3 shadow-sm hover:shadow-md transition-shadow overflow-hidden", colorScheme.border, colorScheme.bg)}
-            >
-              <AccordionTrigger className="hover:no-underline py-3 [&[data-state=open]>div>svg]:rotate-180">
-                <div className="flex items-start justify-between w-full gap-2 min-w-0">
-                  <div className="flex items-start gap-2 text-left min-w-0 flex-1 overflow-hidden">
-                    <Briefcase className={cn("h-4 w-4 shrink-0 mt-0.5", colorScheme.icon)} />
-                    <div className="min-w-0 flex-1 overflow-hidden">
-                      <div className="font-medium break-words leading-tight">{job.job_title}</div>
-                      <div className="text-xs text-muted-foreground break-words leading-tight">{job.company_name}</div>
+      <div className="space-y-3">
+        {/* General Todos Section */}
+        {sortedTodos.length > 0 && (
+          <Card className="border-l-4 border-l-blue-500 bg-gradient-to-r from-blue-50/50 to-transparent dark:from-blue-950/20">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2 text-sm font-medium">
+                  <User className="h-4 w-4 text-blue-600" />
+                  Personal Tasks
+                </CardTitle>
+                <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-200 text-xs">
+                  {sortedTodos.length} active
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="space-y-2">
+                {sortedTodos.slice(0, compact ? 3 : 10).map((todo) => {
+                  const dueDateInfo = getDueDateDisplay(todo.due_date);
+                  
+                  return (
+                    <div
+                      key={todo.id}
+                      className="flex items-start gap-3 p-2 rounded-lg hover:bg-accent/50 transition-colors"
+                    >
+                      <Checkbox
+                        id={todo.id}
+                        checked={todo.status === 'completed'}
+                        onCheckedChange={() => toggleGeneralTodo(todo.id, todo.status)}
+                        className="shrink-0 mt-1"
+                      />
+                      
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2">
+                          <label
+                            htmlFor={todo.id}
+                            className={cn(
+                              "text-sm font-medium cursor-pointer break-words leading-tight",
+                              todo.status === 'completed' && "line-through text-muted-foreground"
+                            )}
+                          >
+                            {todo.task}
+                          </label>
+                          <div className="flex items-center gap-1 shrink-0">
+                            {todo.is_getting_started && (
+                              <div className="flex items-center gap-1 text-xs">
+                                <Target className="h-3 w-3 text-green-600" />
+                                <span className="text-green-600 hidden sm:inline">Getting Started</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        
+                        {todo.description && (
+                          <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                            {todo.description}
+                          </p>
+                        )}
+                        
+                        <div className="flex items-center gap-2 mt-1.5">
+                          <Badge 
+                            variant="outline" 
+                            className={cn("text-xs", getPriorityBadge(todo.priority))}
+                          >
+                            {todo.priority}
+                          </Badge>
+                          
+                          {todo.estimated_time && (
+                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                              <Clock className="h-3 w-3" />
+                              <span>{todo.estimated_time}</span>
+                            </div>
+                          )}
+                          
+                          {dueDateInfo && (
+                            <span className={cn("text-xs", dueDateInfo.color)}>
+                              {dueDateInfo.text}
+                            </span>
+                          )}
+                          
+                          {todo.category && (
+                            <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                              {todo.category}
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     </div>
+                  );
+                })}
+                
+                {compact && sortedTodos.length > 3 && (
+                  <div className="text-center pt-2">
+                    <button 
+                      onClick={() => navigate('/jobs')}
+                      className="text-xs text-muted-foreground hover:text-primary transition-colors"
+                    >
+                      +{sortedTodos.length - 3} more tasks
+                    </button>
                   </div>
-                  <div className="flex items-start gap-1.5 shrink-0">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleGoToJob(job.id);
-                      }}
-                      className="text-[9px] text-muted-foreground hover:text-primary underline whitespace-nowrap"
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Job Checklists Section */}
+        {activeJobs.length > 0 && (
+          <Accordion type="multiple" className="space-y-2">
+            {activeJobs.map((job, index) => {
+              const jobStats = getJobStats(job);
+              
+              // Assign colors based on index
+              const colorSchemes = [
+                { border: 'border-l-4 border-l-primary', bg: '', badge: 'bg-primary/10 border-primary/30 text-primary', icon: 'text-primary' },
+                { border: 'border-l-4 border-l-secondary', bg: '', badge: 'bg-secondary/10 border-secondary/30 text-secondary', icon: 'text-secondary' },
+                { border: 'border-l-4 border-l-accent', bg: '', badge: 'bg-accent/10 border-accent/30 text-accent', icon: 'text-accent' },
+                { border: 'border-l-4 border-l-destructive', bg: '', badge: 'bg-destructive/10 border-destructive/30 text-destructive', icon: 'text-destructive' },
+              ];
+              const colorScheme = colorSchemes[index % colorSchemes.length];
+              
+              return (
+                <AccordionItem 
+                  key={job.id} 
+                  value={job.id}
+                  className={cn("border rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden", colorScheme.border, colorScheme.bg)}
+                >
+                  <div className="flex items-center gap-2">
+                    <AccordionTrigger className="hover:no-underline py-3 px-3 flex-1 [&[data-state=open]>div>svg]:rotate-180">
+                      <div className="flex items-start justify-between w-full gap-2 min-w-0">
+                        <div className="flex items-start gap-2 text-left min-w-0 flex-1 overflow-hidden">
+                          <Briefcase className={cn("h-4 w-4 shrink-0 mt-0.5", colorScheme.icon)} />
+                          <div className="min-w-0 flex-1 overflow-hidden">
+                            <div className="font-medium break-words leading-tight">{job.job_title}</div>
+                            <div className="text-xs text-muted-foreground break-words leading-tight">{job.company_name}</div>
+                          </div>
+                        </div>
+                        <Badge variant="outline" className={cn("shrink-0 text-xs px-1.5 py-0.5 leading-none font-medium", colorScheme.badge)}>
+                          {jobStats.completed}/{jobStats.total}
+                        </Badge>
+                      </div>
+                    </AccordionTrigger>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleGoToJob(job.id)}
+                      className="shrink-0 px-2 h-8 text-xs"
+                      aria-label={`View job details for ${job.job_title} at ${job.company_name}`}
                     >
                       View
-                    </button>
-                    <Badge variant="outline" className={cn("shrink-0 text-xs px-1.5 py-0.5 leading-none font-medium", colorScheme.badge)}>
-                      {jobStats.completed}/{jobStats.total}
-                    </Badge>
+                    </Button>
                   </div>
-                </div>
-              </AccordionTrigger>
-              <AccordionContent className="pt-2 pb-3">
-                {/* Sections within each job */}
-                <Accordion type="multiple" defaultValue={['general']} className="space-y-1">
-                  {job.sections.map((section) => {
-                    const sectionCompleted = section.items.filter(i => i.completed).length;
-                    const sectionTotal = section.items.length;
-                    
-                    return (
-                      <AccordionItem key={section.id} value={section.id} className="border-none">
-                        <AccordionTrigger className="py-2 hover:no-underline text-sm">
-                          <div className="flex items-center justify-between w-full pr-2 gap-2">
-                            <span className="font-medium text-muted-foreground min-w-0 flex-1 break-words">{section.title}</span>
-                            <Badge variant="secondary" className="text-xs shrink-0">
-                              {sectionCompleted}/{sectionTotal}
-                            </Badge>
-                          </div>
-                        </AccordionTrigger>
-                        <AccordionContent className="pt-1 pb-2">
-                          <div className="space-y-1.5">
-                            {section.items.map((item) => (
-                              <div
-                                key={item.id}
-                                className="flex items-start gap-2 p-2 rounded hover:bg-accent/50 transition-colors"
-                              >
-                                <Checkbox
-                                  id={item.id}
-                                  checked={item.completed}
-                                  onCheckedChange={() => {
-                                    if (section.id === 'general') {
-                                      toggleGeneralItem(job.id, item.id, item.completed);
-                                    } else {
-                                      toggleInterviewTask(job.id, section.id, item.text, item.completed);
-                                    }
-                                  }}
-                                  className="shrink-0 mt-0.5"
-                                />
-                                <label
-                                  htmlFor={item.id}
-                                  className={cn(
-                                    "text-xs flex-1 cursor-pointer break-words min-w-0",
-                                    item.completed && "line-through text-muted-foreground"
-                                  )}
-                                >
-                                  {item.text}
-                                </label>
+                  <AccordionContent className="pt-2 pb-3">
+                    {/* Sections within each job */}
+                    <Accordion type="multiple" defaultValue={['general']} className="space-y-1">
+                      {job.sections.map((section) => {
+                        const sectionCompleted = section.items.filter(i => i.completed).length;
+                        const sectionTotal = section.items.length;
+                        
+                        return (
+                          <AccordionItem key={section.id} value={section.id} className="border-none">
+                            <AccordionTrigger className="py-2 hover:no-underline text-sm">
+                              <div className="flex items-center justify-between w-full pr-2 gap-2">
+                                <span className="font-medium text-muted-foreground min-w-0 flex-1 break-words text-sm">{section.title}</span>
+                                <Badge variant="secondary" className="text-xs shrink-0">
+                                  {sectionCompleted}/{sectionTotal}
+                                </Badge>
                               </div>
-                            ))}
-                          </div>
-                        </AccordionContent>
-                      </AccordionItem>
-                    );
-                  })}
-                </Accordion>
-              </AccordionContent>
-            </AccordionItem>
-          );
-        })}
-      </Accordion>
+                            </AccordionTrigger>
+                            <AccordionContent className="pt-1 pb-2">
+                              <div className="space-y-1.5">
+                                {section.items.map((item) => (
+                                  <div
+                                    key={item.id}
+                                    className="flex items-start gap-2 p-2 rounded hover:bg-accent/50 transition-colors"
+                                  >
+                                    <Checkbox
+                                      id={item.id}
+                                      checked={item.completed}
+                                      onCheckedChange={() => {
+                                        if (section.id === 'general') {
+                                          toggleGeneralItem(job.id, item.id, item.completed);
+                                        } else {
+                                          toggleInterviewTask(job.id, section.id, item.text, item.completed);
+                                        }
+                                      }}
+                                      className="shrink-0 mt-0.5"
+                                    />
+                                    <label
+                                      htmlFor={item.id}
+                                      className={cn(
+                                        "text-xs flex-1 cursor-pointer break-words min-w-0",
+                                        item.completed && "line-through text-muted-foreground"
+                                      )}
+                                    >
+                                      {item.text}
+                                    </label>
+                                  </div>
+                                ))}
+                              </div>
+                            </AccordionContent>
+                          </AccordionItem>
+                        );
+                      })}
+                    </Accordion>
+                  </AccordionContent>
+                </AccordionItem>
+              );
+            })}
+          </Accordion>
+        )}
+      </div>
     </div>
   );
 }

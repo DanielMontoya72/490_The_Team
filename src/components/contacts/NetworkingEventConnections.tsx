@@ -234,20 +234,21 @@ export function NetworkingEventConnections({ eventId }: NetworkingEventConnectio
   };
 
   return (
-    <Card>
+    <Card className="w-full max-w-full overflow-hidden">
       <CardHeader>
-        <div className="flex justify-between items-center">
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            Connections Made ({connections.length})
+        <div className="flex justify-between items-center gap-2">
+          <CardTitle className="flex items-center gap-2 min-w-0">
+            <Users className="h-5 w-5 flex-shrink-0" />
+            <span className="truncate">Connections ({connections.length})</span>
           </CardTitle>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-shrink-0">
             {/* Quick Add Button */}
             <Dialog open={isQuickAddOpen} onOpenChange={setIsQuickAddOpen}>
               <DialogTrigger asChild>
                 <Button size="sm" variant="outline">
                   <Hash className="h-4 w-4 mr-1" />
-                  Quick Add
+                  <span className="hidden sm:inline">Quick Add</span>
+                  <span className="sm:hidden">+#</span>
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-sm">
@@ -288,17 +289,18 @@ export function NetworkingEventConnections({ eventId }: NetworkingEventConnectio
             {/* Detailed Add Button */}
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
-                <Button size="sm">
+                <Button size="sm" className="flex-shrink-0">
                   <Plus className="h-4 w-4 mr-1" />
-                  Add Connection
+                  <span className="hidden sm:inline">Add Connection</span>
+                  <span className="sm:hidden">Add</span>
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+              <DialogContent className="w-[90vw] sm:w-[95vw] max-w-2xl max-h-[80vh] overflow-y-auto overflow-x-hidden">
                 <DialogHeader>
-                  <DialogTitle>Add New Connection</DialogTitle>
+                  <DialogTitle className="break-words">Add New Connection</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <Label>Name *</Label>
                       <Input
@@ -326,7 +328,7 @@ export function NetworkingEventConnections({ eventId }: NetworkingEventConnectio
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <Label>Email</Label>
                       <Input
@@ -352,7 +354,7 @@ export function NetworkingEventConnections({ eventId }: NetworkingEventConnectio
                       value={conversationNotes}
                       onChange={(e) => setConversationNotes(e.target.value)}
                       placeholder="What did you discuss? Key points to remember..."
-                      className="min-h-[100px]"
+                      className="min-h-[80px] sm:min-h-[100px] resize-none"
                     />
                   </div>
 
@@ -393,24 +395,25 @@ export function NetworkingEventConnections({ eventId }: NetworkingEventConnectio
         ) : (
           <div className="space-y-3">
             {connections.map((connection: any) => (
-              <div key={connection.id} className="border rounded-lg p-4 space-y-2">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h4 className="font-semibold">{connection.contact_name}</h4>
+              <div key={connection.id} className="border rounded-lg p-4 space-y-2 w-full max-w-full overflow-hidden">
+                <div className="flex justify-between items-start gap-2">
+                  <div className="min-w-0 flex-1">
+                    <h4 className="font-semibold break-words">{connection.contact_name}</h4>
                     {connection.contact_title && (
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-sm text-muted-foreground break-words">
                         {connection.contact_title}
                         {connection.contact_company && ` at ${connection.contact_company}`}
                       </p>
                     )}
                   </div>
-                  <Badge variant={getValueVariant(connection.relationship_value)}>
-                    {connection.relationship_value} value
+                  <Badge variant={getValueVariant(connection.relationship_value)} className="flex-shrink-0">
+                    <span className="hidden sm:inline">{connection.relationship_value} value</span>
+                    <span className="sm:hidden">{connection.relationship_value}</span>
                   </Badge>
                 </div>
 
                 {connection.conversation_notes && (
-                  <p className="text-sm">{connection.conversation_notes}</p>
+                  <p className="text-sm break-words">{connection.conversation_notes}</p>
                 )}
 
                 <div className="flex gap-2 flex-wrap">
@@ -422,20 +425,22 @@ export function NetworkingEventConnections({ eventId }: NetworkingEventConnectio
                         setSelectedConnection(connection);
                         setIsMessageDialogOpen(true);
                       }}
+                      className="flex-1 min-w-0 sm:flex-none"
                     >
                       <Mail className="h-4 w-4 mr-1" />
-                      Email
+                      <span className="truncate">Email</span>
                     </Button>
                   )}
                   {connection.contact_linkedin && (
-                    <Button size="sm" variant="outline" asChild>
+                    <Button size="sm" variant="outline" asChild className="flex-1 min-w-0 sm:flex-none">
                       <a
                         href={connection.contact_linkedin.startsWith('http') ? connection.contact_linkedin : `https://${connection.contact_linkedin}`}
                         target="_blank"
                         rel="noopener noreferrer"
+                        className="truncate"
                       >
                         <Linkedin className="h-4 w-4 mr-1" />
-                        LinkedIn
+                        <span className="truncate">LinkedIn</span>
                       </a>
                     </Button>
                   )}
@@ -444,9 +449,10 @@ export function NetworkingEventConnections({ eventId }: NetworkingEventConnectio
                       size="sm"
                       onClick={() => markFollowUpComplete.mutate(connection.id)}
                       disabled={markFollowUpComplete.isPending}
+                      className="flex-1 min-w-0 sm:flex-none"
                     >
                       <CheckCircle className="h-4 w-4 mr-1" />
-                      {markFollowUpComplete.isPending ? 'Marking...' : 'Mark Follow-up Done'}
+                      <span className="truncate">{markFollowUpComplete.isPending ? 'Marking...' : 'Mark Follow-up Done'}</span>
                     </Button>
                   )}
                   {connection.follow_up_completed && (

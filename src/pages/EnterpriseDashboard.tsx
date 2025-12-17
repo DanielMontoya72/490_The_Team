@@ -1,9 +1,13 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { AppNav } from "@/components/layout/AppNav";
+import { ContactSidebar } from "@/components/layout/ContactSidebar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Building2, Users, BarChart3, Upload, Palette, Shield, TrendingUp, Plus, ChevronRight } from "lucide-react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import Events from "@/pages/Events";
+import { Building2, Users, BarChart3, Upload, Palette, Shield, TrendingUp, Plus, ChevronRight, Send, GraduationCap, UsersRound, Calendar, UserCircle, Sparkles, Bell, Linkedin, Coffee, Target, Network, UserPlus } from "lucide-react";
 import { CohortManagement } from "@/components/enterprise/CohortManagement";
 import { ProgramAnalytics } from "@/components/enterprise/ProgramAnalytics";
 import { BulkOnboarding } from "@/components/enterprise/BulkOnboarding";
@@ -17,6 +21,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 
 export default function EnterpriseDashboard() {
+  const [eventsSheetOpen, setEventsSheetOpen] = useState(false);
   const [createOrgOpen, setCreateOrgOpen] = useState(false);
   const [selectedOrgId, setSelectedOrgId] = useState<string | null>(null);
 
@@ -76,29 +81,35 @@ export default function EnterpriseDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <>
       <AppNav />
-      <main className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold flex items-center gap-3">
-              <Building2 className="h-8 w-8 text-primary" />
-              Enterprise Career Services
-            </h1>
-            <p className="text-muted-foreground mt-2">
-              Manage job seeker cohorts, track program effectiveness, and generate ROI reports
-            </p>
-          </div>
-          <Button onClick={() => setCreateOrgOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Create Organization
-          </Button>
-        </div>
+      
+      <div className="flex min-h-screen bg-background pt-16">
+        <ContactSidebar activeTab="enterprise" />
+        
+        {/* Main Content Area */}
+        <main className="flex-1 w-full overflow-x-hidden lg:ml-56">
+          <div className="px-6 md:px-8 py-6 md:py-8 max-w-[1600px] mx-auto">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <h1 className="text-3xl font-bold flex items-center gap-3">
+                  <Building2 className="h-8 w-8 text-primary" />
+                  Enterprise Career Services
+                </h1>
+                <p className="text-muted-foreground mt-2">
+                  Manage job seeker cohorts, track program effectiveness, and generate ROI reports
+                </p>
+              </div>
+              <Button onClick={() => setCreateOrgOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Create Organization
+              </Button>
+            </div>
 
-        {/* Organization Selection View */}
-        {!selectedOrg ? (
-          <div className="space-y-6">
+            {/* Organization Selection View */}
+            {!selectedOrg ? (
+              <div className="space-y-6">
             {/* Organizations List */}
             {organizations.length > 0 ? (
               <div className="space-y-4">
@@ -240,12 +251,26 @@ export default function EnterpriseDashboard() {
             </Tabs>
           </div>
         )}
+          </div>
+        </main>
+      </div>
 
-        <CreateOrganizationDialog
-          open={createOrgOpen}
-          onOpenChange={setCreateOrgOpen}
-        />
-      </main>
-    </div>
+      <CreateOrganizationDialog
+        open={createOrgOpen}
+        onOpenChange={setCreateOrgOpen}
+      />
+
+      {/* Events Sheet */}
+      <Sheet open={eventsSheetOpen} onOpenChange={setEventsSheetOpen}>
+        <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>Events</SheetTitle>
+          </SheetHeader>
+          <div className="mt-4">
+            <Events />
+          </div>
+        </SheetContent>
+      </Sheet>
+    </>
   );
 }

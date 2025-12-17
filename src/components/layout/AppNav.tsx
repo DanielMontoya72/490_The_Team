@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Menu, X, LayoutDashboard, User, Settings, LogOut, Briefcase, FileText, Users, Layout, Mail, Target, BookOpen, Code2, TrendingUp, BarChart3, Clock, Award, Share2, UserPlus, ChevronDown, Calendar, Heart, Building2, GraduationCap, DollarSign, Sparkles, FlaskConical, Layers, Scale, Activity, Book, MessageSquare, HelpCircle, Rocket, Map } from "lucide-react";
+import { Menu, X, LayoutDashboard, User, LogOut, Briefcase, FileText, Users, BarChart3, Brain, TrendingUp, BookOpen, Target, Share2, Mail, UserPlus, Monitor, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -42,20 +42,46 @@ export function AppNav() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Skip to main content functionality
+  const skipToMainContent = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      const mainContent = document.getElementById('main-content');
+      if (mainContent) {
+        mainContent.focus();
+        mainContent.scrollIntoView();
+      }
+    }
+  };
+
   useEffect(() => {
+    let isMounted = true;
+    
     const fetchProfilePicture = async () => {
       try {
+        // Only fetch profile if user is authenticated
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+        if (sessionError || !sessionData?.session) {
+          return;
+        }
+        
         const { data, error } = await supabase.functions.invoke('users-me', {
           method: 'GET',
         });
-        if (data?.data?.profile_picture_url) {
+        
+        if (isMounted && data?.data?.profile_picture_url) {
           setProfilePictureUrl(data.data.profile_picture_url);
         }
-      } catch (error) {
-        console.error('Failed to fetch profile picture:', error);
+      } catch {
+        // Silently fail - profile picture is not critical
       }
     };
+    
     fetchProfilePicture();
+    
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const handleLogout = async () => {
@@ -73,6 +99,7 @@ export function AppNav() {
   const isActive = (path: string) => location.pathname === path;
   const isDocsActive = () => ["/resumes", "/cover-letters", "/doc-management", "/ab-testing", "/documentation", "/getting-started", "/faq"].includes(location.pathname);
   const isInterviewPrepActive = () => [
+    "/preparation-hub",
     "/performance-improvement",
     "/skill-development",
     "/career-goals",
@@ -99,399 +126,308 @@ export function AppNav() {
       <Link
         to="/dashboard"
         className={cn(
-          "flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200",
+          "flex items-center gap-3 px-3 py-3 rounded-lg transition-all duration-200 touch-manipulation",
+          mobile ? "min-h-[44px]" : "",
           isActive("/dashboard")
             ? "bg-primary text-primary-foreground font-semibold"
             : "hover:bg-muted text-foreground hover:ring-2 hover:ring-yellow-400 hover:ring-opacity-70"
         )}
+        onClick={() => mobile && setIsOpen(false)}
       >
-        <LayoutDashboard className="h-5 w-5" />
-        <span>Dashboard</span>
+        <LayoutDashboard className="h-5 w-5 flex-shrink-0" />
+        <span className="text-base">Dashboard</span>
       </Link>
       <Link
-        to="/profile-enhanced"
+        to="/profile-settings"
         className={cn(
-          "flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200",
-          isActive("/profile-enhanced")
+          "flex items-center gap-3 px-3 py-3 rounded-lg transition-all duration-200 touch-manipulation",
+          mobile ? "min-h-[44px]" : "",
+          isActive("/profile-settings")
             ? "bg-primary text-primary-foreground font-semibold"
             : "hover:bg-muted text-foreground hover:ring-2 hover:ring-yellow-400 hover:ring-opacity-70"
         )}
+        onClick={() => mobile && setIsOpen(false)}
       >
-        <User className="h-5 w-5" />
-        <span>Profile</span>
+        <User className="h-5 w-5 flex-shrink-0" />
+        <span className="text-base">Profile</span>
       </Link>
       <Link
         to="/jobs"
         className={cn(
-          "flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200",
+          "flex items-center gap-3 px-3 py-3 rounded-lg transition-all duration-200 touch-manipulation",
+          mobile ? "min-h-[44px]" : "",
           isActive("/jobs")
             ? "bg-primary text-primary-foreground font-semibold"
             : "hover:bg-muted text-foreground hover:ring-2 hover:ring-yellow-400 hover:ring-opacity-70"
         )}
+        onClick={() => mobile && setIsOpen(false)}
       >
-        <Briefcase className="h-5 w-5" />
-        <span>Jobs</span>
+        <Briefcase className="h-5 w-5 flex-shrink-0" />
+        <span className="text-base">Jobs</span>
       </Link>
       <Link
-        to="/platform-tracking"
+        to="/analytics-hub"
         className={cn(
-          "flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200",
-          isActive("/platform-tracking")
+          "flex items-center gap-3 px-3 py-3 rounded-lg transition-all duration-200 touch-manipulation",
+          mobile ? "min-h-[44px]" : "",
+          (isActive("/analytics-hub") || isActive("/stats") || isActive("/salary-analytics") || isActive("/predictive-analytics") || isActive("/offer-comparison") || isActive("/job-map"))
+            ? "bg-primary text-primary-foreground font-semibold"
+            : "hover:bg-muted text-foreground hover:ring-2 hover:ring-yellow-400 hover:ring-opacity-70 colorblind:hover:ring-blue-400"
+        )}
+        onClick={() => mobile && setIsOpen(false)}
+      >
+        <BarChart3 className="h-5 w-5 flex-shrink-0" />
+        <span className="text-base">Analytics</span>
+      </Link>
+      <Link
+        to="/preparation-hub"
+        className={cn(
+          "flex items-center gap-3 px-3 py-3 rounded-lg transition-all duration-200 touch-manipulation",
+          mobile ? "min-h-[44px]" : "",
+          isInterviewPrepActive()
+            ? "bg-primary text-primary-foreground font-semibold"
+            : "hover:bg-muted text-foreground hover:ring-2 hover:ring-yellow-400 hover:ring-opacity-70 colorblind:hover:ring-blue-400"
+        )}
+        onClick={() => mobile && setIsOpen(false)}
+      >
+        <Brain className="h-5 w-5 flex-shrink-0" />
+        <span className="text-base">Preparation</span>
+      </Link>
+      <Link
+        to="/networking"
+        className={cn(
+          "flex items-center gap-3 px-3 py-3 rounded-lg transition-all duration-200 touch-manipulation",
+          mobile ? "min-h-[44px]" : "",
+          isNetworkingActive()
+            ? "bg-primary text-primary-foreground font-semibold"
+            : "hover:bg-muted text-foreground hover:ring-2 hover:ring-yellow-400 hover:ring-opacity-70 colorblind:hover:ring-blue-400"
+        )}
+        onClick={() => mobile && setIsOpen(false)}
+      >
+        <Users className="h-5 w-5 flex-shrink-0" />
+        <span className="text-base">Contacts</span>
+      </Link>
+      <Link
+        to="/doc-management"
+        className={cn(
+          "flex items-center gap-3 px-3 py-3 rounded-lg transition-all duration-200 touch-manipulation",
+          mobile ? "min-h-[44px]" : "",
+          isActive("/doc-management")
             ? "bg-primary text-primary-foreground font-semibold"
             : "hover:bg-muted text-foreground hover:ring-2 hover:ring-yellow-400 hover:ring-opacity-70"
         )}
+        onClick={() => mobile && setIsOpen(false)}
       >
-        <Layers className="h-5 w-5" />
-        <span>Platforms</span>
+        <FileText className="h-5 w-5 flex-shrink-0" />
+        <span className="text-base">Docs</span>
       </Link>
       <Link
-        to="/response-library"
+        to="/faq"
         className={cn(
-          "flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200",
-          isActive("/response-library")
+          "flex items-center gap-3 px-3 py-3 rounded-lg transition-all duration-200 touch-manipulation",
+          mobile ? "min-h-[44px]" : "",
+          isActive("/faq")
             ? "bg-primary text-primary-foreground font-semibold"
             : "hover:bg-muted text-foreground hover:ring-2 hover:ring-yellow-400 hover:ring-opacity-70"
         )}
+        onClick={() => mobile && setIsOpen(false)}
       >
-        <BookOpen className="h-5 w-5" />
-        <span>Responses</span>
+        <HelpCircle className="h-5 w-5 flex-shrink-0" />
+        <span className="text-base">FAQ</span>
       </Link>
     </>
   );
 
   return (
-    <nav className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 fixed top-0 left-0 right-0 z-50 w-full border-b">
-      <div className="w-full px-4 flex items-center justify-between h-16">
-        {/* Logo */}
-        <Link to="/dashboard" className="flex items-center flex-shrink-0">
-          <img src={theLogo} alt="The Team Logo" className="h-10 w-auto object-contain" />
-        </Link>
+    <>
+      {/* Skip to main content link */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-0 focus:left-0 focus:z-[100] focus:bg-primary focus:text-primary-foreground focus:p-4 focus:underline focus:outline-none focus:ring-2 focus:ring-primary-foreground"
+        onKeyDown={skipToMainContent}
+        tabIndex={0}
+      >
+        Skip to main content
+      </a>
+      
+      <nav 
+        className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 fixed top-0 left-0 right-0 z-50 w-full border-b border-primary/90 shadow-lg"
+        role="navigation"
+        aria-label="Main navigation"
+      >
+        <div className="w-full px-3 sm:px-4 lg:px-6 flex items-center justify-between h-14 sm:h-16">
+          {/* Logo */}
+          <Link 
+            to="/dashboard" 
+            className="flex items-center flex-shrink-0"
+            aria-label="Go to dashboard - The Team Logo"
+          >
+            <img 
+              src={theLogo} 
+              alt="The Team - Professional Job Search Platform Logo" 
+              className="h-8 sm:h-10 w-auto object-contain"
+              width="32"
+              height="32"
+              loading="eager"
+              decoding="sync"
+              style={{ 
+                maxWidth: '32px', 
+                maxHeight: '32px',
+                objectFit: 'contain',
+                imageRendering: 'auto'
+              }}
+            />
+          </Link>
 
-        {/* Desktop Navigation - Centered */}
-        <div className="hidden md:flex flex-1 items-center justify-center mx-4">
-          <div className="flex items-center gap-1.5 flex-wrap justify-center">
+        {/* Desktop Navigation - Single row, switches to hamburger if doesn't fit */}
+        <div className="hidden xl:flex flex-1 items-center justify-center mx-4">
+          <div className="flex items-center gap-1 justify-center">
             <Link
               to="/dashboard"
               className={cn(
-                "flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200",
+                "flex items-center gap-1.5 px-2.5 py-2 rounded-lg transition-all duration-200 text-sm whitespace-nowrap",
                 isActive("/dashboard")
                   ? "bg-primary text-primary-foreground font-semibold"
                   : "hover:bg-muted text-foreground hover:ring-2 hover:ring-yellow-400 hover:ring-opacity-70"
               )}
             >
-              <LayoutDashboard className="h-5 w-5" />
+              <LayoutDashboard className="h-4 w-4 flex-shrink-0" />
               <span>Dashboard</span>
             </Link>
             <Link
               to="/jobs"
               className={cn(
-                "flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200",
+                "flex items-center gap-1.5 px-2.5 py-2 rounded-lg transition-all duration-200 text-sm whitespace-nowrap",
                 isActive("/jobs")
                   ? "bg-primary text-primary-foreground font-semibold"
                   : "hover:bg-muted text-foreground hover:ring-2 hover:ring-yellow-400 hover:ring-opacity-70"
               )}
             >
-              <Briefcase className="h-5 w-5" />
+              <Briefcase className="h-4 w-4 flex-shrink-0" />
               <span>Jobs</span>
             </Link>
             <Link
-              to="/platform-tracking"
+              to="/analytics-hub"
               className={cn(
-                "flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200",
-                isActive("/platform-tracking")
+                "flex items-center gap-1.5 px-2.5 py-2 rounded-lg transition-all duration-200 text-sm whitespace-nowrap",
+                (isActive("/analytics-hub") || isActive("/stats") || isActive("/salary-analytics") || isActive("/predictive-analytics") || isActive("/offer-comparison") || isActive("/job-map"))
                   ? "bg-primary text-primary-foreground font-semibold"
-                  : "hover:bg-muted text-foreground hover:ring-2 hover:ring-yellow-400 hover:ring-opacity-70"
+                  : "hover:bg-muted text-foreground hover:ring-2 hover:ring-yellow-400 hover:ring-opacity-70 colorblind:hover:ring-blue-400"
               )}
             >
-              <Layers className="h-5 w-5" />
-              <span>Platforms</span>
+              <BarChart3 className="h-4 w-4 flex-shrink-0" />
+              <span>Analytics</span>
             </Link>
             <Link
-              to="/response-library"
+              to="/preparation-hub"
               className={cn(
-                "flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200",
-                isActive("/response-library")
+                "flex items-center gap-1.5 px-2.5 py-2 rounded-lg transition-all duration-200 text-sm whitespace-nowrap",
+                isInterviewPrepActive()
+                  ? "bg-primary text-primary-foreground font-semibold"
+                  : "hover:bg-muted text-foreground hover:ring-2 hover:ring-yellow-400 hover:ring-opacity-70 colorblind:hover:ring-blue-400"
+              )}
+            >
+              <Brain className="h-4 w-4 flex-shrink-0" />
+              <span>Preparation</span>
+            </Link>
+            <Link
+              to="/networking"
+              className={cn(
+                "flex items-center gap-1.5 px-2.5 py-2 rounded-lg transition-all duration-200 text-sm whitespace-nowrap",
+                isNetworkingActive()
+                  ? "bg-primary text-primary-foreground font-semibold"
+                  : "hover:bg-muted text-foreground hover:ring-2 hover:ring-yellow-400 hover:ring-opacity-70 colorblind:hover:ring-blue-400"
+              )}
+            >
+              <Users className="h-4 w-4 flex-shrink-0" />
+              <span>Contacts</span>
+            </Link>
+            <Link
+              to="/doc-management"
+              className={cn(
+                "flex items-center gap-1.5 px-2.5 py-2 rounded-lg transition-all duration-200 text-sm whitespace-nowrap",
+                isActive("/doc-management")
                   ? "bg-primary text-primary-foreground font-semibold"
                   : "hover:bg-muted text-foreground hover:ring-2 hover:ring-yellow-400 hover:ring-opacity-70"
               )}
             >
-              <BookOpen className="h-5 w-5" />
-              <span>Responses</span>
+              <FileText className="h-4 w-4 flex-shrink-0" />
+              <span>Docs</span>
             </Link>
-            {/* Analytics Dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                className={cn(
-                  "flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 outline-none",
-                  (isActive("/stats") || isActive("/salary-analytics") || isActive("/predictive-analytics") || isActive("/offer-comparison") || isActive("/job-map"))
-                    ? "bg-primary text-primary-foreground font-semibold"
-                    : "hover:bg-muted text-foreground hover:ring-2 hover:ring-yellow-400 hover:ring-opacity-70 colorblind:hover:ring-blue-400"
-                )}
-              >
-                <BarChart3 className="h-5 w-5" />
-                <span>Analytics</span>
-                <ChevronDown className="h-4 w-4" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="center" className="w-48">
-                <DropdownMenuItem asChild>
-                  <Link to="/stats" className="flex items-center gap-2 cursor-pointer">
-                    <BarChart3 className="h-4 w-4" />
-                    <span>Job Stats</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/salary-analytics" className="flex items-center gap-2 cursor-pointer">
-                    <DollarSign className="h-4 w-4" />
-                    <span>Salary Analytics</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/predictive-analytics" className="flex items-center gap-2 cursor-pointer">
-                    <Sparkles className="h-4 w-4" />
-                    <span>Predictive Analytics</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/offer-comparison" className="flex items-center gap-2 cursor-pointer">
-                    <Scale className="h-4 w-4" />
-                    <span>Offer Comparison</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/monitoring" className="flex items-center gap-2 cursor-pointer">
-                    <Activity className="h-4 w-4" />
-                    <span>Monitoring</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/job-map" className="flex items-center gap-2 cursor-pointer">
-                    <Map className="h-4 w-4" />
-                    <span>Job Map</span>
-                  </Link>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            {/* Interview Prep Dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                className={cn(
-                  "flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 outline-none",
-                  isInterviewPrepActive()
-                    ? "bg-primary text-primary-foreground font-semibold"
-                    : "hover:bg-muted text-foreground hover:ring-2 hover:ring-yellow-400 hover:ring-opacity-70 colorblind:hover:ring-blue-400"
-                )}
-              >
-                <TrendingUp className="h-5 w-5" />
-                <span>Preparation</span>
-                <ChevronDown className="h-4 w-4" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="center" className="w-56">
-                <DropdownMenuItem asChild>
-                  <Link to="/skill-development" className="flex items-center gap-2 cursor-pointer">
-                    <BookOpen className="h-4 w-4" />
-                    <span>Skills</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/career-goals" className="flex items-center gap-2 cursor-pointer">
-                    <Target className="h-4 w-4" />
-                    <span>Goals</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/mock-interview" className="flex items-center gap-2 cursor-pointer">
-                    <Briefcase className="h-4 w-4" />
-                    <span>Mock Interview</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/progress-sharing" className="flex items-center gap-2 cursor-pointer">
-                    <Share2 className="h-4 w-4" />
-                    <span>Progress</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/productivity-analysis" className="flex items-center gap-2 cursor-pointer">
-                    <Clock className="h-4 w-4" />
-                    <span>Productivity</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/technical-prep" className="flex items-center gap-2 cursor-pointer">
-                    <Code2 className="h-4 w-4" />
-                    <span>Technical Prep</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/interview-questions" className="flex items-center gap-2 cursor-pointer">
-                    <MessageSquare className="h-4 w-4" />
-                    <span>Questions Bank</span>
-                  </Link>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            {/* Contacts Dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                className={cn(
-                  "flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 outline-none",
-                  isNetworkingActive()
-                    ? "bg-primary text-primary-foreground font-semibold"
-                    : "hover:bg-muted text-foreground hover:ring-2 hover:ring-yellow-400 hover:ring-opacity-70 colorblind:hover:ring-blue-400"
-                )}
-              >
-                <Users className="h-5 w-5" />
-                <span>Contacts</span>
-                <ChevronDown className="h-4 w-4" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="center" className="w-48">
-                <DropdownMenuItem asChild>
-                  <Link to="/networking" className="flex items-center gap-2 cursor-pointer">
-                    <Users className="h-4 w-4" />
-                    <span>Networking</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/referrals" className="flex items-center gap-2 cursor-pointer">
-                    <UserPlus className="h-4 w-4" />
-                    <span>Referrals</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/references" className="flex items-center gap-2 cursor-pointer">
-                    <UserPlus className="h-4 w-4" />
-                    <span>References</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/teams" className="flex items-center gap-2 cursor-pointer">
-                    <Users className="h-4 w-4" />
-                    <span>Teams</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/mentors" className="flex items-center gap-2 cursor-pointer">
-                    <User className="h-4 w-4" />
-                    <span>Mentors</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/events" className="flex items-center gap-2 cursor-pointer">
-                    <Calendar className="h-4 w-4" />
-                    <span>Events</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/networking-campaigns" className="flex items-center gap-2 cursor-pointer">
-                    <TrendingUp className="h-4 w-4" />
-                    <span>Campaigns</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/family-support" className="flex items-center gap-2 cursor-pointer">
-                    <Heart className="h-4 w-4" />
-                    <span>Family Support</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/enterprise" className="flex items-center gap-2 cursor-pointer">
-                    <Building2 className="h-4 w-4" />
-                    <span>Enterprise</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/external-advisors" className="flex items-center gap-2 cursor-pointer">
-                    <GraduationCap className="h-4 w-4" />
-                    <span>Advisors</span>
-                  </Link>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            {/* Docs Dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                className={cn(
-                  "flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 outline-none",
-                  isDocsActive()
-                    ? "bg-primary text-primary-foreground font-semibold"
-                    : "hover:bg-muted text-foreground hover:ring-2 hover:ring-yellow-400 hover:ring-opacity-70 colorblind:hover:ring-blue-400"
-                )}
-              >
-                <FileText className="h-5 w-5" />
-                <span>Docs</span>
-                <ChevronDown className="h-4 w-4" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="center" className="w-48">
-                <DropdownMenuItem asChild>
-                  <Link to="/doc-management" className="flex items-center gap-2 cursor-pointer">
-                    <Layout className="h-4 w-4" />
-                    <span>Doc Management</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/resumes" className="flex items-center gap-2 cursor-pointer">
-                    <FileText className="h-4 w-4" />
-                    <span>Resumes</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/cover-letters" className="flex items-center gap-2 cursor-pointer">
-                    <Mail className="h-4 w-4" />
-                    <span>Cover Letters</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/ab-testing" className="flex items-center gap-2 cursor-pointer">
-                    <FlaskConical className="h-4 w-4" />
-                    <span>A/B Testing</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/documentation" className="flex items-center gap-2 cursor-pointer">
-                    <Book className="h-4 w-4" />
-                    <span>Production Docs</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/getting-started" className="flex items-center gap-2 cursor-pointer">
-                    <Rocket className="h-4 w-4" />
-                    <span>Getting Started</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/faq" className="flex items-center gap-2 cursor-pointer">
-                    <HelpCircle className="h-4 w-4" />
-                    <span>FAQ</span>
-                  </Link>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
           </div>
         </div>
 
-        {/* Notifications, Settings and Logout - Far Right */}
-        <div className="hidden md:flex items-center gap-1.5 flex-shrink-0">
+        {/* Desktop/Tablet Profile and Notifications - Far Right */}
+        <div className="hidden xl:flex items-center gap-1 flex-shrink-0">
           <NotificationBell />
+          
+          {/* FAQ Link */}
+          <Tooltip delayDuration={100}>
+            <TooltipTrigger asChild>
+              <Link
+                to="/faq"
+                className={cn(
+                  "flex items-center gap-1.5 px-2 py-2 rounded-lg transition-all duration-200 hover:scale-105",
+                  isActive("/faq")
+                    ? "bg-primary text-primary-foreground font-semibold ring-2 ring-primary/50"
+                    : "hover:bg-muted text-foreground hover:ring-2 hover:ring-yellow-400 hover:ring-opacity-70 colorblind:hover:ring-blue-400"
+                )}
+                aria-label="Frequently Asked Questions"
+              >
+                <HelpCircle className="h-5 w-5" />
+                <span className="hidden 2xl:inline text-sm">FAQ</span>
+              </Link>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="font-medium">
+              <p>FAQ & Help</p>
+            </TooltipContent>
+          </Tooltip>
+          
+          {/* Admin Only - Monitoring Dashboard */}
+          <div className="mx-2 h-6 w-px bg-border" />
+          <Tooltip delayDuration={100}>
+            <TooltipTrigger asChild>
+              <Link
+                to="/monitoring-dashboard"
+                className={cn(
+                  "flex items-center gap-1.5 px-2 py-2 rounded-lg transition-all duration-200 hover:scale-105",
+                  isActive("/monitoring-dashboard")
+                    ? "bg-primary text-primary-foreground font-semibold ring-2 ring-primary/50"
+                    : "hover:bg-muted text-foreground hover:ring-2 hover:ring-yellow-400 hover:ring-opacity-70 colorblind:hover:ring-blue-400"
+                )}
+                aria-label="Admin monitoring dashboard"
+              >
+                <Monitor className="h-5 w-5" />
+                <span className="hidden 2xl:inline text-sm">Monitor</span>
+              </Link>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="font-medium">
+              <p>Monitoring Dashboard (Admin)</p>
+            </TooltipContent>
+          </Tooltip>
+          
           <Tooltip delayDuration={100}>
             <TooltipTrigger asChild>
               <Link
                 to="/profile-settings"
                 className={cn(
-                  "flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 hover:scale-105",
+                  "flex items-center gap-1.5 px-2 py-2 rounded-lg transition-all duration-200 hover:scale-105",
                   (isActive("/profile-settings") || isActive("/profile-enhanced") || isActive("/settings"))
                     ? "bg-primary text-primary-foreground font-semibold ring-2 ring-primary/50"
                     : "hover:bg-muted text-foreground hover:ring-2 hover:ring-yellow-400 hover:ring-opacity-70 colorblind:hover:ring-blue-400"
                 )}
+                aria-label="Go to profile and settings"
               >
                 {profilePictureUrl ? (
                   <img
                     src={profilePictureUrl}
                     alt="Profile"
-                    className="h-6 w-6 rounded-full object-cover border-2 border-primary/30 hover:border-primary transition-all"
+                    className="h-8 w-8 rounded-full object-cover border-2 border-primary/30 hover:border-primary transition-all"
                   />
                 ) : (
-                  <User className="h-5 w-5" />
+                  <User className="h-6 w-6" />
                 )}
+                <span className="hidden 2xl:inline text-sm">Profile</span>
               </Link>
             </TooltipTrigger>
             <TooltipContent side="bottom" className="font-medium">
@@ -502,35 +438,37 @@ export function AppNav() {
             variant="outline"
             size="sm"
             onClick={handleLogout}
-            className="ml-1.5 flex items-center gap-2"
+            className="ml-1 flex items-center gap-1.5 px-2"
+            aria-label="Logout from your account"
           >
             <LogOut className="h-4 w-4" />
-            Logout
+            <span className="hidden 2xl:inline text-sm">Logout</span>
           </Button>
         </div>
 
-        {/* Mobile Navigation - Far Right */}
-        <div className="md:hidden flex items-center gap-2 flex-shrink-0">
+        {/* Mobile/Tablet Hamburger Menu - All devices below XL */}
+        <div className="xl:hidden flex items-center gap-2 flex-shrink-0">
           <NotificationBell />
           <Tooltip delayDuration={100}>
             <TooltipTrigger asChild>
               <Link
                 to="/profile-settings"
                 className={cn(
-                  "flex items-center gap-2 p-2 rounded-lg transition-all duration-200 hover:scale-105",
+                  "flex items-center gap-2 p-2 rounded-lg transition-all duration-200 hover:scale-105 touch-manipulation",
                   (isActive("/profile-settings") || isActive("/settings") || isActive("/profile-enhanced"))
                     ? "bg-primary text-primary-foreground ring-2 ring-primary/50"
                     : "hover:bg-muted text-foreground hover:ring-2 hover:ring-yellow-400 hover:ring-opacity-70 colorblind:hover:ring-blue-400"
                 )}
+                aria-label="Go to profile and settings"
               >
                 {profilePictureUrl ? (
                   <img
                     src={profilePictureUrl}
                     alt="Profile"
-                    className="h-6 w-6 rounded-full object-cover border-2 border-primary/30 hover:border-primary transition-all"
+                    className="h-8 w-8 rounded-full object-cover border-2 border-primary/30 hover:border-primary transition-all"
                   />
                 ) : (
-                  <User className="h-5 w-5" />
+                  <User className="h-6 w-6" />
                 )}
               </Link>
             </TooltipTrigger>
@@ -540,26 +478,47 @@ export function AppNav() {
           </Tooltip>
           <Sheet open={isOpen} onOpenChange={setIsOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon">
-                {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="touch-manipulation min-h-[44px] min-w-[44px]"
+                aria-label={isOpen ? "Close navigation menu" : "Open navigation menu"}
+                aria-expanded={isOpen}
+                aria-controls="mobile-navigation"
+              >
+                {isOpen ? <X className="h-6 w-6" aria-hidden="true" /> : <Menu className="h-6 w-6" aria-hidden="true" />}
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-[280px] sm:w-[350px]">
+            <SheetContent 
+              side="right" 
+              className="w-[280px] sm:w-[320px] px-4"
+              aria-labelledby="mobile-nav-title"
+              id="mobile-navigation"
+            >
               <div className="flex flex-col gap-4 mt-8">
-                <NavLinks mobile />
-                <Button
-                  variant="destructive"
-                  onClick={handleLogout}
-                  className="flex items-center gap-2 justify-start"
-                >
-                  <LogOut className="h-5 w-5" />
-                  Logout
-                </Button>
+                <h2 id="mobile-nav-title" className="sr-only">Navigation Menu</h2>
+                <nav role="navigation" aria-label="Mobile navigation">
+                  <div className="space-y-2">
+                    <NavLinks mobile />
+                  </div>
+                </nav>
+                <div className="border-t pt-4">
+                  <Button
+                    variant="destructive"
+                    onClick={handleLogout}
+                    className="flex items-center gap-2 justify-start w-full touch-manipulation min-h-[44px]"
+                    aria-label="Logout from your account"
+                  >
+                    <LogOut className="h-5 w-5" />
+                    Logout
+                  </Button>
+                </div>
               </div>
             </SheetContent>
           </Sheet>
         </div>
       </div>
     </nav>
+    </>
   );
 }

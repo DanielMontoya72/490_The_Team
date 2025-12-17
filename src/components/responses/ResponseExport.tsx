@@ -118,7 +118,7 @@ export function ResponseExport() {
         const printWindow = window.open('', '_blank');
         if (printWindow) {
           printWindow.document.write(`
-            <html>
+            <html lang="en">
               <head>
                 <title>Interview Response Library</title>
                 <style>
@@ -165,7 +165,7 @@ export function ResponseExport() {
           {/* Format Selection */}
           <div className="space-y-3">
             <Label className="text-base">Export Format</Label>
-            <RadioGroup value={format} onValueChange={(v) => setFormat(v as any)} className="grid grid-cols-3 gap-4">
+            <RadioGroup value={format} onValueChange={(v) => setFormat(v as any)} className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <Label
                 htmlFor="pdf"
                 className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer [&:has([data-state=checked])]:border-primary"

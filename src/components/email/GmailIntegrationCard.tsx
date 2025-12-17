@@ -98,7 +98,7 @@ export function GmailIntegrationCard() {
   };
 
   const updateSettings = useMutation({
-    mutationFn: async (updates: { scanning_enabled?: boolean; scan_frequency?: "hourly" | "daily" | "manual" }) => {
+    mutationFn: async (updates: { scanning_enabled?: boolean; scan_frequency?: "hourly" | "daily" | "manual"; auto_import_enabled?: boolean }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
@@ -125,8 +125,24 @@ export function GmailIntegrationCard() {
 
       if (error) throw error;
 
-      toast.success(`Scanned ${data.scanned} emails, found ${data.newEmails} new job-related emails`);
+      const importResults = data.autoImportResults || {};
+      let message = `Scanned ${data.scanned} emails, found ${data.newEmails} new job-related emails`;
+      
+      if (importResults.autoImported > 0) {
+        message += `. Auto-imported ${importResults.autoImported} applications`;
+      }
+      if (importResults.consolidated > 0) {
+        message += `. Consolidated ${importResults.consolidated} duplicates`;
+      }
+      if (importResults.pendingReview > 0) {
+        message += `. ${importResults.pendingReview} pending review`;
+      }
+
+      toast.success(message);
       queryClient.invalidateQueries({ queryKey: ["application-emails"] });
+      queryClient.invalidateQueries({ queryKey: ["platform-applications"] });
+      queryClient.invalidateQueries({ queryKey: ["pending-imports-count"] });
+      queryClient.invalidateQueries({ queryKey: ["platform-stats"] });
     } catch (error: any) {
       console.error("Error scanning emails:", error);
       toast.error(error.message || "Failed to scan emails");
@@ -217,6 +233,20 @@ export function GmailIntegrationCard() {
               <Switch
                 checked={integration.scanning_enabled || false}
                 onCheckedChange={(checked) => updateSettings.mutate({ scanning_enabled: checked })}
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label>Auto-Import Applications</Label>
+                <p className="text-sm text-muted-foreground">
+                  Automatically import detected applications from LinkedIn, Indeed, etc.
+                </p>
+              </div>
+              <Switch
+                checked={integration.auto_import_enabled || false}
+                onCheckedChange={(checked) => updateSettings.mutate({ auto_import_enabled: checked })}
+                disabled={!integration.scanning_enabled}
               />
             </div>
 

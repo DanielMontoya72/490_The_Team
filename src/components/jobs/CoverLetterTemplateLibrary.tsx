@@ -467,7 +467,7 @@ export function CoverLetterTemplateLibrary({ onSelectTemplate }: CoverLetterTemp
         </TabsList>
         <div className="h-1 bg-purple-400 rounded-full mt-2" />
 
-        <ScrollArea className="h-[600px] mt-6">
+        <div className="mt-6">
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 pb-4 px-1">
             {filteredTemplates.map((template) => {
               const TemplateIcon = getTemplateIcon(template.template_type);
@@ -677,7 +677,7 @@ export function CoverLetterTemplateLibrary({ onSelectTemplate }: CoverLetterTemp
               </p>
             </div>
           )}
-        </ScrollArea>
+        </div>
       </Tabs>
       </div>
 

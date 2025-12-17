@@ -83,7 +83,7 @@ export function ConversionRateTracker({ data }: ConversionRateTrackerProps) {
           <Progress value={conversionRate} className="h-2" />
         </div>
         
-        <div className="grid grid-cols-3 gap-4 pt-4 border-t">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t">
           <div className="space-y-1">
             <div className="text-2xl font-semibold text-green-500">{passedInterviews}</div>
             <div className="text-xs text-muted-foreground">Passed</div>

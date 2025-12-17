@@ -640,36 +640,36 @@ export function CoverLetterEditor({ initialContent, onSave, onContentChange, job
 
   return (
     <>
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div className="flex flex-col xl:flex-row gap-1 sm:gap-2 lg:gap-3 xl:gap-4 h-full w-full max-w-full overflow-hidden">
       {/* Editor Section */}
-      <div className="space-y-4">
+      <div className="w-full xl:w-1/2 space-y-1 sm:space-y-2 lg:space-y-3 min-w-0 max-w-full flex flex-col overflow-hidden">
         {/* AI Generator Collapsible */}
         <Collapsible open={isAIOpen} onOpenChange={setIsAIOpen}>
-          <Card className="border-2 border-primary/20">
+          <Card className="border-2 border-primary/20 flex-shrink-0">
             <CollapsibleTrigger className="w-full">
-              <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+              <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors py-1 sm:py-2 lg:py-3">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500">
-                      <Sparkles className="h-5 w-5 text-white" />
+                  <div className="flex items-center gap-1 sm:gap-2 lg:gap-3">
+                    <div className="p-1 sm:p-1.5 lg:p-2 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500">
+                      <Sparkles className="h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5 text-white" />
                     </div>
                     <div className="text-left">
-                      <CardTitle className="text-lg">AI Cover Letter Generator</CardTitle>
-                      <CardDescription>
+                      <CardTitle className="text-sm sm:text-base lg:text-lg">AI Cover Letter Generator</CardTitle>
+                      <CardDescription className="text-xs sm:text-sm hidden sm:block">
                         Generate personalized content with AI
                       </CardDescription>
                     </div>
                   </div>
-                  <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform duration-200 ${
+                  <ChevronDown className={`h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground transition-transform duration-200 ${
                     isAIOpen ? 'rotate-180' : ''
                   }`} />
                 </div>
               </CardHeader>
             </CollapsibleTrigger>
             <CollapsibleContent>
-              <CardContent className="pt-0 space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="templateType">Cover Letter Type</Label>
+              <CardContent className="pt-0 space-y-2 sm:space-y-3 lg:space-y-4">
+                <div className="space-y-1 sm:space-y-2">
+                  <Label htmlFor="templateType" className="text-xs sm:text-sm">Cover Letter Type</Label>
                   <Select value={selectedTemplateType} onValueChange={setSelectedTemplateType}>
                     <SelectTrigger id="templateType">
                       <SelectValue placeholder="Select cover letter type" />
@@ -1074,11 +1074,11 @@ export function CoverLetterEditor({ initialContent, onSave, onContentChange, job
                     </h3>
                     
                     <Tabs defaultValue="summary" className="w-full">
-                      <TabsList className="grid w-full grid-cols-4 h-auto">
-                        <TabsTrigger value="summary" className="text-xs">Summary</TabsTrigger>
-                        <TabsTrigger value="news" className="text-xs">News Referenced</TabsTrigger>
-                        <TabsTrigger value="values" className="text-xs">Values Alignment</TabsTrigger>
-                        <TabsTrigger value="market" className="text-xs">Market Position</TabsTrigger>
+                      <TabsList className="flex flex-wrap w-full h-auto gap-1">
+                        <TabsTrigger value="summary" className="text-xs flex-1 min-w-[70px]">Summary</TabsTrigger>
+                        <TabsTrigger value="news" className="text-xs flex-1 min-w-[70px]">News Referenced</TabsTrigger>
+                        <TabsTrigger value="values" className="text-xs flex-1 min-w-[70px]">Values Alignment</TabsTrigger>
+                        <TabsTrigger value="market" className="text-xs flex-1 min-w-[70px]">Market Position</TabsTrigger>
                       </TabsList>
                       
                       <TabsContent value="summary" className="space-y-3 pt-4">
@@ -1501,27 +1501,32 @@ export function CoverLetterEditor({ initialContent, onSave, onContentChange, job
       </div>
 
       {/* Live Preview Section */}
-      <Card className="lg:sticky lg:top-4 lg:self-start">
-        <CardHeader>
-          <CardTitle>Live Preview</CardTitle>
-          <CardDescription>See how your cover letter will look</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="bg-white text-black p-8 rounded-lg border shadow-sm min-h-[500px] max-h-[700px] overflow-y-auto">
-            <div className="prose prose-sm max-w-none">
+      <div className="w-full xl:w-1/2 min-w-0 max-w-full flex flex-col overflow-hidden">
+        <div className="h-full flex flex-col overflow-hidden">
+          <Card className="flex-1 flex flex-col overflow-hidden">
+            <CardHeader className="pb-2 flex-shrink-0">
+              <CardTitle className="text-sm sm:text-base">Live Preview</CardTitle>
+              <CardDescription className="text-xs sm:text-sm">See how your cover letter will look</CardDescription>
+            </CardHeader>
+            <CardContent className="p-2 sm:p-3 flex-1 min-h-0 overflow-hidden">
+              <div className="bg-white text-black p-2 sm:p-3 lg:p-4 rounded border h-full overflow-y-auto w-full max-w-full">
+            <div className="prose prose-sm max-w-none w-full break-words">
               {content ? (
                 <div 
-                  className="whitespace-pre-wrap leading-relaxed"
+                  className="whitespace-pre-wrap leading-relaxed text-xs sm:text-sm break-words"
                   style={{
                     fontFamily: fontFamily,
-                    fontSize: `${getDocumentFontSize()}pt`,
-                    lineHeight: '1.6'
+                    fontSize: window.innerWidth < 640 ? '8pt' : window.innerWidth < 1024 ? '9pt' : `${getDocumentFontSize()}pt`,
+                    lineHeight: window.innerWidth < 640 ? '1.3' : '1.4',
+                    wordWrap: 'break-word',
+                    overflowWrap: 'break-word',
+                    maxWidth: '100%'
                   }}
                 >
                   {content}
                 </div>
               ) : (
-                <p className="text-gray-400 italic">
+                <p className="text-gray-400 italic text-xs sm:text-sm">
                   Start typing to see your cover letter preview...
                 </p>
               )}
@@ -1529,27 +1534,29 @@ export function CoverLetterEditor({ initialContent, onSave, onContentChange, job
           </div>
         </CardContent>
       </Card>
+        </div>
+      </div>
     </div>
 
       {/* AI Insights Dialog - Shows all variations, company research, and suggestions */}
       <Dialog open={showAIInsights} onOpenChange={setShowAIInsights}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-primary" />
+      <DialogContent className="w-[90vw] max-w-2xl max-h-[90vh] overflow-y-auto [&>button]:hidden">
+        <DialogHeader className="pr-4">
+          <DialogTitle className="flex items-center gap-2 text-sm sm:text-base">
+            <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
             AI Cover Letter Insights
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-xs sm:text-sm">
             Explore all variations, company research, and improvement suggestions
           </DialogDescription>
         </DialogHeader>
 
         {generatedData && (
           <Tabs defaultValue="variations" className="mt-4">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="variations">All Variations</TabsTrigger>
-              <TabsTrigger value="research">Company Research</TabsTrigger>
-              <TabsTrigger value="suggestions">Suggestions</TabsTrigger>
+            <TabsList className="flex flex-wrap w-full h-auto gap-1 bg-muted p-1">
+              <TabsTrigger value="variations" className="flex-shrink-0 text-xs sm:text-sm touch-manipulation px-2 py-1">All Variations</TabsTrigger>
+              <TabsTrigger value="research" className="flex-shrink-0 text-xs sm:text-sm touch-manipulation px-2 py-1">Company Research</TabsTrigger>
+              <TabsTrigger value="suggestions" className="flex-shrink-0 text-xs sm:text-sm touch-manipulation px-2 py-1">Suggestions</TabsTrigger>
             </TabsList>
 
             <TabsContent value="variations" className="space-y-4">
@@ -1561,7 +1568,7 @@ export function CoverLetterEditor({ initialContent, onSave, onContentChange, job
                         <CardTitle className="text-base">Variation {index + 1}</CardTitle>
                         <CardDescription>Tone: {variation.tone}</CardDescription>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex flex-wrap sm:flex-nowrap gap-2">
                         <Button
                           variant="outline"
                           size="sm"
@@ -1574,6 +1581,7 @@ export function CoverLetterEditor({ initialContent, onSave, onContentChange, job
                             setHasChanges(true);
                             toast.success('Variation loaded into editor');
                           }}
+                          className="flex-1 sm:flex-none touch-manipulation"
                         >
                           <Edit className="h-4 w-4 mr-2" />
                           Use This
@@ -1589,6 +1597,7 @@ export function CoverLetterEditor({ initialContent, onSave, onContentChange, job
                             navigator.clipboard.writeText(text);
                             toast.success('Copied to clipboard');
                           }}
+                          className="flex-1 sm:flex-none touch-manipulation"
                         >
                           <Copy className="h-4 w-4 mr-2" />
                           Copy

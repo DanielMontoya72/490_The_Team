@@ -50,13 +50,15 @@ export function ManualPlatformEntry() {
       if (!user) throw new Error("Not authenticated");
 
       // Check for existing duplicate
-      const { data: existing } = await supabase
+      const { data: existingJobs } = await supabase
         .from("jobs")
         .select("id, platform_count")
         .eq("user_id", user.id)
         .ilike("job_title", `%${data.jobTitle}%`)
         .ilike("company_name", `%${data.company}%`)
-        .single();
+        .limit(1);
+      
+      const existing = existingJobs?.[0] || null;
 
       let jobId = existing?.id;
 
@@ -90,7 +92,7 @@ export function ManualPlatformEntry() {
             status: data.status,
             primary_platform: data.platform,
             notes: data.notes,
-            posting_url: data.applicationUrl
+            job_url: data.applicationUrl || null
           })
           .select()
           .single();

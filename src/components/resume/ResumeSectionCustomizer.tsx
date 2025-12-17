@@ -92,40 +92,40 @@ function SortableSection({ section, onToggle, onFormatChange }: {
       {...listeners}
       className={`border rounded-lg p-4 bg-card cursor-grab active:cursor-grabbing ${isDragging ? "shadow-lg" : ""}`}
     >
-      <div className="flex items-center gap-3">
+      <div className="flex items-start gap-3 flex-wrap md:flex-nowrap">
         <div className="flex-shrink-0">
           <GripVertical className="h-5 w-5 text-muted-foreground" />
         </div>
         
-        <div className="flex-1">
-          <div className="flex items-center gap-2 mb-1">
-            <h4 className="font-medium text-sm">{section.name}</h4>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
+            <h4 className="font-medium text-sm break-words">{section.name}</h4>
             {section.isComplete ? (
-              <Badge variant="secondary" className="text-xs">
+              <Badge variant="secondary" className="text-xs flex-shrink-0">
                 <Check className="h-3 w-3 mr-1" /> Complete
               </Badge>
             ) : (
-              <Badge variant="outline" className="text-xs">
+              <Badge variant="outline" className="text-xs flex-shrink-0">
                 <AlertCircle className="h-3 w-3 mr-1" /> Incomplete
               </Badge>
             )}
           </div>
           
           {section.requiredForJobTypes && section.requiredForJobTypes.length > 0 && (
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground break-words">
               Recommended for: {section.requiredForJobTypes.join(", ")}
             </p>
           )}
         </div>
 
-        <div className="flex items-center gap-3" onPointerDown={(e) => e.stopPropagation()}>
+        <div className="flex items-center gap-2 flex-wrap md:flex-nowrap flex-shrink-0" onPointerDown={(e) => e.stopPropagation()}>
           <div className="flex flex-col gap-1">
             <Select
               disabled={!section.enabled}
               value={section.formatting?.fontSize || "medium"}
               onValueChange={(value) => onFormatChange(section.id, { ...section.formatting, fontSize: value })}
             >
-              <SelectTrigger className="w-32 h-9 text-xs">
+              <SelectTrigger className="w-28 h-9 text-xs">
                 <SelectValue placeholder="Font" />
               </SelectTrigger>
               <SelectContent>
@@ -142,7 +142,7 @@ function SortableSection({ section, onToggle, onFormatChange }: {
               value={section.formatting?.spacing || "normal"}
               onValueChange={(value) => onFormatChange(section.id, { ...section.formatting, spacing: value })}
             >
-              <SelectTrigger className="w-32 h-9 text-xs">
+              <SelectTrigger className="w-28 h-9 text-xs">
                 <SelectValue placeholder="Spacing" />
               </SelectTrigger>
               <SelectContent>

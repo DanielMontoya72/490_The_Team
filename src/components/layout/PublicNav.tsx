@@ -53,6 +53,15 @@ export function PublicNav() {
               src={theLogo} 
               alt="The Team Logo" 
               className="h-8 md:h-10 w-auto transition-transform group-hover:scale-105"
+              width="32"
+              height="32"
+              loading="eager"
+              decoding="sync"
+              style={{ 
+                maxWidth: '32px', 
+                maxHeight: '32px',
+                objectFit: 'contain'
+              }}
             />
             <span className="text-sm md:text-base font-semibold text-muted-foreground hidden sm:inline">
               ATS Platform
@@ -74,8 +83,13 @@ export function PublicNav() {
         <div className="md:hidden flex items-center gap-2 flex-shrink-0">
           <Sheet open={isOpen} onOpenChange={setIsOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon">
-                {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              <Button 
+                variant="ghost" 
+                size="icon"
+                aria-label={isOpen ? "Close navigation menu" : "Open navigation menu"}
+                aria-expanded={isOpen}
+              >
+                {isOpen ? <X className="h-6 w-6" aria-hidden="true" /> : <Menu className="h-6 w-6" aria-hidden="true" />}
               </Button>
             </SheetTrigger>
             <SheetContent side="right" className="w-[280px] sm:w-[350px]">

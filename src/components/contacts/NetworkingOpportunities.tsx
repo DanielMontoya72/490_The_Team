@@ -106,216 +106,164 @@ export function NetworkingOpportunities() {
   };
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5" />
-            Discover Networking Events
+    <div className="space-y-6 w-full">
+      {/* Discovery Section */}
+      <Card className="w-full">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center gap-3 text-xl">
+            <Sparkles className="h-6 w-6 flex-shrink-0 text-primary" />
+            <span>Discover New Events</span>
           </CardTitle>
           <CardDescription>
-            Find conferences, meetups, and events to expand your network
+            Use AI to find networking events tailored to your interests and location
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
-              <Label>Industry</Label>
+              <Label htmlFor="industry">Industry</Label>
               <Input
-                placeholder="Technology, Finance, Healthcare"
+                id="industry"
+                placeholder="e.g., Technology, Healthcare"
                 value={industry}
                 onChange={(e) => setIndustry(e.target.value)}
+                className="h-10"
               />
             </div>
             <div className="space-y-2">
-              <Label>Interests</Label>
+              <Label htmlFor="interests">Interests</Label>
               <Input
-                placeholder="AI, Cloud, Entrepreneurship"
+                id="interests"
+                placeholder="e.g., AI, Cloud, Startups"
                 value={interests}
                 onChange={(e) => setInterests(e.target.value)}
+                className="h-10"
               />
             </div>
             <div className="space-y-2">
-              <Label>Location</Label>
+              <Label htmlFor="location">Location</Label>
               <Input
-                placeholder="San Francisco, Virtual"
+                id="location"
+                placeholder="e.g., San Francisco, Virtual"
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
+                className="h-10"
               />
             </div>
           </div>
           <Button
             onClick={() => discoverOpportunities.mutate()}
             disabled={discoverOpportunities.isPending}
-            className="w-full"
+            className="w-full md:w-auto"
+            size="lg"
           >
             {discoverOpportunities.isPending ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Discovering Events...
+                <span>Discovering Events...</span>
               </>
             ) : (
               <>
                 <Sparkles className="mr-2 h-4 w-4" />
-                Discover Networking Opportunities
+                <span>Discover Events</span>
               </>
             )}
           </Button>
         </CardContent>
       </Card>
 
+      {/* Events Tabs */}
       <Tabs defaultValue="all" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="all">All ({opportunities?.length || 0})</TabsTrigger>
-          <TabsTrigger value="discovered">New ({filteredOpportunities('discovered').length})</TabsTrigger>
-          <TabsTrigger value="interested">Interested ({filteredOpportunities('interested').length})</TabsTrigger>
-          <TabsTrigger value="registered">Registered ({filteredOpportunities('registered').length})</TabsTrigger>
-          <TabsTrigger value="attended">Attended ({filteredOpportunities('attended').length})</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-3 h-11 p-1 bg-muted rounded-lg">
+          <TabsTrigger value="all" className="px-4 py-2 text-sm font-medium data-[state=active]:bg-background rounded-md">
+            All Events
+          </TabsTrigger>
+          <TabsTrigger value="discovered" className="px-4 py-2 text-sm font-medium data-[state=active]:bg-background rounded-md">
+            New
+          </TabsTrigger>
+          <TabsTrigger value="interested" className="px-4 py-2 text-sm font-medium data-[state=active]:bg-background rounded-md">
+            Interested
+          </TabsTrigger>
         </TabsList>
 
-        {['all', 'discovered', 'interested', 'registered', 'attended'].map(tab => (
-          <TabsContent key={tab} value={tab}>
-            <ScrollArea className="h-[600px]">
-              <div className="space-y-4">
+        {['all', 'discovered', 'interested'].map(tab => (
+          <TabsContent key={tab} value={tab} className="mt-6">
+            <div className="min-h-[600px]">
+              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
                 {isLoading ? (
-                  <div className="flex items-center justify-center p-8">
+                  <div className="col-span-full flex items-center justify-center py-12">
                     <Loader2 className="h-8 w-8 animate-spin" />
                   </div>
                 ) : filteredOpportunities(tab === 'all' ? undefined : tab).length === 0 ? (
-                  <Card>
-                    <CardContent className="flex flex-col items-center justify-center p-8">
-                      <Calendar className="h-12 w-12 text-muted-foreground mb-4" />
-                      <p className="text-muted-foreground">No events found in this category</p>
-                    </CardContent>
-                  </Card>
+                  <div className="col-span-full text-center py-12">
+                    <Calendar className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-muted-foreground mb-2">No events found</h3>
+                    <p className="text-muted-foreground">Try discovering new events using the form above</p>
+                  </div>
                 ) : (
                   filteredOpportunities(tab === 'all' ? undefined : tab).map((event) => (
-                    <Card key={event.id}>
-                      <CardHeader>
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <span className="text-2xl">{getTypeIcon(event.opportunity_type)}</span>
-                              <CardTitle className="text-lg">{event.event_name}</CardTitle>
-                              {event.diversity_focus && (
-                                <Badge variant="secondary">Diversity & Inclusion</Badge>
-                              )}
-                            </div>
-                            <CardDescription>{event.event_description}</CardDescription>
-                          </div>
-                          <Badge variant={event.relevance_score >= 80 ? 'default' : event.relevance_score >= 60 ? 'secondary' : 'outline'}>
-                            {event.relevance_score}% Match
-                          </Badge>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="flex items-center gap-2 text-sm">
-                            <Calendar className="h-4 w-4 text-muted-foreground" />
-                            <span>{event.event_date ? format(new Date(event.event_date), 'PPP') : 'Date TBA'}</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-sm">
-                            <MapPin className="h-4 w-4 text-muted-foreground" />
-                            <span>{event.event_location || 'Location TBA'}</span>
-                          </div>
-                          {event.organizer && (
-                            <div className="flex items-center gap-2 text-sm">
-                              <Users className="h-4 w-4 text-muted-foreground" />
-                              <span>Organized by {event.organizer}</span>
-                            </div>
-                          )}
-                        </div>
-
-                        {Array.isArray(event.speakers) && event.speakers.length > 0 && (
-                          <div>
-                            <p className="text-sm font-medium mb-2">Featured Speakers:</p>
-                            <div className="space-y-1">
-                              {event.speakers.slice(0, 3).map((speaker: any, idx: number) => (
-                                <div key={idx} className="flex items-center gap-2 text-sm text-muted-foreground">
-                                  <UserCheck className="h-3 w-3" />
-                                  <span>{speaker.name} - {speaker.title}</span>
+                    <Card key={event.id} className="w-full hover:shadow-lg transition-shadow">
+                      <div className="p-4">
+                        <div className="flex items-start gap-3 mb-3">
+                          <span className="text-2xl flex-shrink-0">{getTypeIcon(event.opportunity_type)}</span>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-lg font-semibold leading-tight mb-2 line-clamp-2">{event.event_name}</h3>
+                            <p className="text-sm text-muted-foreground line-clamp-3 mb-3">{event.event_description}</p>
+                            
+                            <div className="flex flex-wrap items-center gap-3 mb-3 text-sm text-muted-foreground">
+                              {event.event_date && (
+                                <div className="flex items-center gap-1">
+                                  <Calendar className="h-4 w-4" />
+                                  <span>{format(new Date(event.event_date), 'MMM d, yyyy')}</span>
                                 </div>
-                              ))}
-                              {event.speakers.length > 3 && (
-                                <p className="text-sm text-muted-foreground">+ {event.speakers.length - 3} more speakers</p>
+                              )}
+                              {event.event_location && (
+                                <div className="flex items-center gap-1">
+                                  <MapPin className="h-4 w-4" />
+                                  <span className="truncate">{event.event_location}</span>
+                                </div>
+                              )}
+                            </div>
+                            
+                            <div className="flex items-center justify-between mb-3">
+                              <Badge variant="outline" className="text-sm px-2 py-1">
+                                {event.relevance_score}% Match
+                              </Badge>
+                              {event.diversity_focus && (
+                                <Badge variant="secondary" className="text-sm px-2 py-1">D&I Focus</Badge>
+                              )}
+                            </div>
+                            
+                            <div className="flex gap-2">
+                              <Button
+                                variant="default"
+                                size="sm"
+                                onClick={() => setSelectedEventId(event.id)}
+                                className="flex-1"
+                              >
+                                <Users className="h-4 w-4 mr-1" />
+                                Manage
+                              </Button>
+                              {event.status === 'discovered' && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => updateStatus.mutate({ id: event.id, status: 'interested' })}
+                                  className="flex-1"
+                                >
+                                  <UserCheck className="h-4 w-4 mr-1" />
+                                  Interested
+                                </Button>
                               )}
                             </div>
                           </div>
-                        )}
-
-                        {Array.isArray(event.topics) && event.topics.length > 0 && (
-                          <div>
-                            <p className="text-sm font-medium mb-2">Topics:</p>
-                            <div className="flex flex-wrap gap-2">
-                              {event.topics.map((topic: string, idx: number) => (
-                                <Badge key={idx} variant="outline">{topic}</Badge>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {Array.isArray(event.potential_contacts) && event.potential_contacts.length > 0 && (
-                          <div>
-                            <p className="text-sm font-medium mb-2">Who You'll Meet:</p>
-                            <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
-                              {event.potential_contacts.slice(0, 3).map((contact: string, idx: number) => (
-                                <li key={idx}>{contact}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-
-                        <div className="flex gap-2 pt-2 flex-wrap">
-                          <Button
-                            variant="default"
-                            size="sm"
-                            onClick={() => setSelectedEventId(event.id)}
-                          >
-                            Manage Event
-                          </Button>
-                          {event.status === 'discovered' && (
-                            <>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => updateStatus.mutate({ id: event.id, status: 'interested' })}
-                              >
-                                Mark as Interested
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => updateStatus.mutate({ id: event.id, status: 'dismissed' })}
-                              >
-                                Not Interested
-                              </Button>
-                            </>
-                          )}
-                          {event.status === 'interested' && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => updateStatus.mutate({ id: event.id, status: 'registered', field: 'registered' })}
-                            >
-                              Mark as Registered
-                            </Button>
-                          )}
-                          {event.status === 'registered' && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => updateStatus.mutate({ id: event.id, status: 'attended', field: 'attended' })}
-                            >
-                              Mark as Attended
-                            </Button>
-                          )}
                         </div>
-                      </CardContent>
+                      </div>
                     </Card>
                   ))
                 )}
               </div>
-            </ScrollArea>
+            </div>
           </TabsContent>
         ))}
       </Tabs>
@@ -323,13 +271,17 @@ export function NetworkingOpportunities() {
       {/* Event Details Dialog */}
       {selectedEventId && (
         <Dialog open={!!selectedEventId} onOpenChange={() => setSelectedEventId(null)}>
-          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Event Details & Management</DialogTitle>
+          <DialogContent className="w-[90vw] sm:w-[95vw] max-w-lg sm:max-w-4xl h-[85vh] sm:h-[90vh] max-h-[85vh] sm:max-h-[90vh] overflow-y-auto overflow-x-hidden p-3 sm:p-4 lg:p-6">
+            <DialogHeader className="pb-3 sm:pb-4">
+              <DialogTitle className="text-base sm:text-lg lg:text-xl break-words">Event Details & Management</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
-              <NetworkingEventGoals eventId={selectedEventId} />
-              <NetworkingEventConnections eventId={selectedEventId} />
+            <div className="space-y-3 sm:space-y-4 lg:space-y-6 w-full overflow-x-hidden">
+              <div className="w-full overflow-x-hidden">
+                <NetworkingEventGoals eventId={selectedEventId} />
+              </div>
+              <div className="w-full overflow-x-hidden">
+                <NetworkingEventConnections eventId={selectedEventId} />
+              </div>
             </div>
           </DialogContent>
         </Dialog>

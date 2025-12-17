@@ -59,16 +59,33 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Update password using admin API
-    const { error: updateError } = await supabase.auth.admin.updateUserById(
-      tokenData.user_id,
+    // Update password using Supabase Admin API
+    // Note: We trust that the user_id is valid since it came from password_reset_tokens,
+    // which was created with a user_id from user_profiles (which has FK to auth.users)
+    
+    const userId = String(tokenData.user_id).trim();
+    console.log('Attempting to update password for user:', userId);
+    
+    // Try using Supabase JS client's admin method first
+    // This method may handle authentication and API calls differently
+    const { data: updateData, error: updateError } = await supabase.auth.admin.updateUserById(
+      userId,
       { password: newPassword }
     );
 
     if (updateError) {
-      console.error('Error updating password:', updateError);
-      throw new Error('Failed to update password');
+      console.error('Admin client method failed:', {
+        error: updateError,
+        message: updateError.message,
+        userId: userId,
+      });
+      
+      // If the JS client method fails, the Admin API likely has an infrastructure issue
+      // This error suggests the user cannot be loaded from the database by the Admin API
+      throw new Error(`Unable to update password. The user account may be in an invalid state. Please contact support. Error: ${updateError.message}`);
     }
+
+    console.log('Password updated successfully for user:', userId);
 
     // Mark token as used
     await supabase

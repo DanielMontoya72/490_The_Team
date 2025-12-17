@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { AppNav } from '@/components/layout/AppNav';
 import { CoverLetterEditor } from '@/components/jobs/CoverLetterEditor';
@@ -10,17 +10,26 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { ArrowLeft, Edit3, Trash2, FileText, FileDown, Share2 } from 'lucide-react';
+import { ArrowLeft, Edit3, Trash2, FileText, FileDown, Share2, FolderOpen, FlaskConical, Layout, Book, Rocket, HelpCircle, BarChart3, MessageSquare } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTextSize } from '@/components/text-size-provider';
+import { cn } from '@/lib/utils';
 import jsPDF from 'jspdf';
 import { markChecklistItemComplete } from '@/lib/checklist-utils';
 import { CoverLetterShareDialog } from '@/components/coverletter/CoverLetterShareDialog';
 import { CoverLetterFeedbackPanel } from '@/components/coverletter/CoverLetterFeedbackPanel';
-import { MessageSquare } from 'lucide-react';
+
+// Document Management sidebar navigation
+const docManagementNavigation = [
+  { to: "/doc-management", icon: Layout, label: "Doc Management" },
+  { to: "/resumes", icon: FileText, label: "Resumes" },
+  { to: "/cover-letters", icon: BarChart3, label: "Cover Letters" },
+  { to: "/ab-testing", icon: FlaskConical, label: "A/B Testing" },
+];
 
 export default function CoverLetterEditorPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { textSize } = useTextSize();
   const [searchParams] = useSearchParams();
   const templateId = searchParams.get('templateId');
@@ -265,44 +274,122 @@ export default function CoverLetterEditorPage() {
 
 
 
+  const isActive = (path: string) => location.pathname === path;
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-gradient-to-br from-background to-muted">
         <AppNav />
-        <div className="container mx-auto px-4 py-8 space-y-6">
-          <div className="text-center py-12 text-lg">Loading...</div>
+        <div className="relative pt-16 min-h-screen">
+          <main className="flex-1 w-full lg:ml-60">
+            <div className="px-4 md:px-6 py-6 md:py-8 w-full">
+              <div className="text-center py-12 text-lg">Loading...</div>
+            </div>
+          </main>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen max-h-screen bg-gradient-to-br from-background to-muted overflow-hidden">
       <AppNav />
-      <div className="container max-w-[1600px] mx-auto px-4 py-8 space-y-6">
-        <div className="space-y-6">
+      
+      <div className="relative pt-16 h-[calc(100vh-4rem)] overflow-hidden">
+        {/* Sidebar Navigation */}
+        <aside className="hidden lg:block w-60 bg-card border-r fixed left-0 top-16 h-[calc(100vh-4rem)] overflow-y-auto z-30">
+          <div className="p-4">
+            <div className="flex items-center gap-2 mb-4">
+              <FolderOpen className="h-5 w-5 text-primary flex-shrink-0" />
+              <h3 className="font-bold text-base text-white">Document Hub</h3>
+            </div>
+            <div className="space-y-1">
+              {docManagementNavigation.map((item, index) => {
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={index}
+                    to={item.to}
+                    className={cn(
+                      "flex items-center gap-2.5 px-3 py-2.5 rounded-lg transition-colors group",
+                      isActive(item.to)
+                        ? "bg-primary text-primary-foreground font-semibold"
+                        : "hover:bg-muted text-white hover:text-primary"
+                    )}
+                  >
+                    <Icon className="h-4 w-4 flex-shrink-0" />
+                    <span className="text-sm font-medium">{item.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        </aside>
+
+        {/* Mobile Sidebar Dropdown */}
+        <aside className="lg:hidden fixed left-0 top-16 right-0 bg-card/80 backdrop-blur-md border-b z-40">
+          <details className="group">
+            <summary className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-muted/50 transition-colors">
+              <div className="flex items-center gap-2">
+                <FolderOpen className="h-4 w-4 text-primary flex-shrink-0" />
+                <h3 className="font-bold text-base text-white">Document Hub</h3>
+              </div>
+              <svg className="h-5 w-5 transition-transform group-open:rotate-180 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </summary>
+            <div className="px-4 pb-4 space-y-1 border-t bg-background/80 backdrop-blur-md">
+              {docManagementNavigation.map((item, index) => {
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={index}
+                    to={item.to}
+                    className={cn(
+                      "flex items-center gap-2.5 px-3 py-2.5 rounded-lg transition-colors group",
+                      isActive(item.to)
+                        ? "bg-primary text-primary-foreground font-semibold"
+                        : "hover:bg-muted/50 text-white hover:text-primary"
+                    )}
+                  >
+                    <Icon className="h-4 w-4 flex-shrink-0" />
+                    <span className="text-sm font-medium">{item.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          </details>
+        </aside>
+
+        {/* Main Content Area */}
+        <main className="flex-1 w-full lg:ml-60 lg:w-[calc(100vw-15rem)] h-full overflow-hidden">
+          <div className="px-1 sm:px-2 lg:px-3 xl:px-4 py-1 sm:py-2 lg:py-3 w-full max-w-full h-full flex flex-col space-y-1 sm:space-y-2 lg:space-y-3 overflow-hidden">
+        <div className="space-y-1 sm:space-y-2 flex-shrink-0">
           <Button
             variant="ghost"
             onClick={() => navigate('/cover-letters')}
-            className="-ml-3"
+            className="-ml-2 sm:-ml-3 touch-manipulation"
+            size="sm"
           >
-            Back to Cover Letters
+            <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+            <span className="hidden sm:inline">Back to Cover Letters</span>
+            <span className="sm:hidden text-xs">Back</span>
           </Button>
           
-          <div className="flex items-start justify-between gap-6 flex-wrap">
-            <div className="space-y-2">
-              <h1 className={`${textSizes.title} font-bold`}>
+          <div className="flex flex-col gap-1 sm:gap-2">
+            <div className="space-y-0.5 sm:space-y-1">
+              <h1 className="text-base sm:text-lg lg:text-xl xl:text-2xl font-bold break-words">
                 {letterId ? 'Edit Cover Letter' : 'Create Cover Letter'}
               </h1>
-              <div className="space-y-1">
+              <div className="space-y-0.5 sm:space-y-1 text-[10px] sm:text-xs lg:text-sm">
                 {materialName && (
-                  <p className="text-muted-foreground font-medium flex items-center gap-1.5">
-                    <FileText className="h-4 w-4" />
-                    {materialName}
+                  <p className="text-muted-foreground font-medium flex items-center gap-1 sm:gap-1.5">
+                    <FileText className="h-2.5 w-2.5 sm:h-3 sm:w-3 lg:h-4 lg:w-4" />
+                    <span className="truncate">{materialName}</span>
                   </p>
                 )}
                 {template && !materialName && (
-                  <p className="text-muted-foreground">
+                  <p className="text-muted-foreground truncate">
                     Using template: {template.template_name}
                   </p>
                 )}
@@ -312,22 +399,24 @@ export default function CoverLetterEditorPage() {
                   </p>
                 )}
                 {job && (
-                  <p className="text-muted-foreground">
+                  <p className="text-muted-foreground truncate">
                     For: {job.job_title} at {job.company_name}
                   </p>
                 )}
               </div>
             </div>
             
-            <div className="flex gap-2 flex-wrap">
+            <div className="flex gap-0.5 sm:gap-1 lg:gap-2 flex-wrap">
               {activeShare && (
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setShowFeedback(!showFeedback)}
+                  className="touch-manipulation text-[10px] sm:text-xs px-1 sm:px-2 py-0.5 sm:py-1"
                 >
-                  <MessageSquare className="h-4 w-4 mr-2" />
-                  {showFeedback ? 'Hide' : 'View'} Feedback
+                  <MessageSquare className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-0.5 sm:mr-1" />
+                  <span className="hidden sm:inline">{showFeedback ? 'Hide' : 'View'} Feedback</span>
+                  <span className="sm:hidden">Feedback</span>
                 </Button>
               )}
               <Button
@@ -335,18 +424,22 @@ export default function CoverLetterEditorPage() {
                 size="sm"
                 onClick={() => setIsShareDialogOpen(true)}
                 disabled={!materialId}
+                className="touch-manipulation text-[10px] sm:text-xs px-1 sm:px-2 py-0.5 sm:py-1"
               >
-                <Share2 className="h-4 w-4 mr-2" />
-                Share
+                <Share2 className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-0.5 sm:mr-1" />
+                <span className="hidden sm:inline">Share</span>
+                <span className="sm:hidden">Share</span>
               </Button>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setIsExportDialogOpen(true)}
                 disabled={!editorContent}
+                className="touch-manipulation text-[10px] sm:text-xs px-1 sm:px-2 py-0.5 sm:py-1"
               >
-                <FileDown className="h-4 w-4 mr-2" />
-                Export
+                <FileDown className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-0.5 sm:mr-1" />
+                <span className="hidden sm:inline">Export</span>
+                <span className="sm:hidden">Export</span>
               </Button>
               <Button
                 variant="outline"
@@ -356,18 +449,22 @@ export default function CoverLetterEditorPage() {
                   setIsRenameDialogOpen(true);
                 }}
                 disabled={!materialId}
+                className="touch-manipulation text-[10px] sm:text-xs px-1 sm:px-2 py-0.5 sm:py-1"
               >
-                <Edit3 className="h-4 w-4 mr-2" />
-                Rename
+                <Edit3 className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-0.5 sm:mr-1" />
+                <span className="hidden sm:inline">Rename</span>
+                <span className="sm:hidden">Rename</span>
               </Button>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setIsDeleteDialogOpen(true)}
                 disabled={!materialId}
+                className="text-destructive hover:text-destructive touch-manipulation text-[10px] sm:text-xs px-1 sm:px-2 py-0.5 sm:py-1"
               >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete
+                <Trash2 className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-0.5 sm:mr-1" />
+                <span className="hidden sm:inline">Delete</span>
+                <span className="sm:hidden">Delete</span>
               </Button>
             </div>
           </div>
@@ -375,7 +472,7 @@ export default function CoverLetterEditorPage() {
 
         {/* Rename Dialog */}
         <Dialog open={isRenameDialogOpen} onOpenChange={setIsRenameDialogOpen}>
-          <DialogContent>
+          <DialogContent className="w-[95vw] max-w-md">
             <DialogHeader>
               <DialogTitle>Rename Cover Letter</DialogTitle>
               <DialogDescription>
@@ -411,7 +508,7 @@ export default function CoverLetterEditorPage() {
 
         {/* Delete Confirmation Dialog */}
         <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-          <DialogContent>
+          <DialogContent className="w-[95vw] max-w-md">
             <DialogHeader>
               <DialogTitle>Delete Cover Letter</DialogTitle>
               <DialogDescription>
@@ -431,7 +528,7 @@ export default function CoverLetterEditorPage() {
 
         {/* Export Dialog */}
         <Dialog open={isExportDialogOpen} onOpenChange={setIsExportDialogOpen}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Export Cover Letter</DialogTitle>
               <DialogDescription>
@@ -457,44 +554,61 @@ export default function CoverLetterEditorPage() {
           />
         )}
 
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mt-6">
-          <div className={showFeedback && activeShare ? "xl:col-span-2" : "xl:col-span-3"}>
-            <CoverLetterEditor
-              initialContent={editorContent}
-              onSave={handleSave}
-              onContentChange={(newContent) => setEditorContent(newContent)}
-              jobTitle={job?.job_title}
-              jobId={jobId || undefined}
-              templateType={template?.template_type || 'formal'}
-              autoGenerate={aiGenerate}
-              globalTextSize={textSize}
-            />
-          </div>
+        <div className="flex-1 min-h-0 w-full">
+          {!showFeedback || !activeShare ? (
+            <div className="w-full h-full">
+              <CoverLetterEditor
+                initialContent={editorContent}
+                onSave={handleSave}
+                onContentChange={(newContent) => setEditorContent(newContent)}
+                jobTitle={job?.job_title}
+                jobId={jobId || undefined}
+                templateType={template?.template_type || 'formal'}
+                autoGenerate={aiGenerate}
+                globalTextSize={textSize}
+              />
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 2xl:grid-cols-3 gap-1 sm:gap-2 lg:gap-3 w-full max-w-full h-full overflow-hidden">
+              <div className="2xl:col-span-2 min-w-0 max-w-full overflow-hidden">
+                <CoverLetterEditor
+                  initialContent={editorContent}
+                  onSave={handleSave}
+                  onContentChange={(newContent) => setEditorContent(newContent)}
+                  jobTitle={job?.job_title}
+                  jobId={jobId || undefined}
+                  templateType={template?.template_type || 'formal'}
+                  autoGenerate={aiGenerate}
+                  globalTextSize={textSize}
+                />
+              </div>
           
-          {showFeedback && activeShare && materialId && (
-            <div className="xl:col-span-1">
-              <Card className="sticky top-4">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <MessageSquare className="h-5 w-5" />
-                    Feedback
-                  </CardTitle>
-                  <CardDescription>
-                    Comments from reviewers
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <CoverLetterFeedbackPanel
-                    coverLetterId={materialId}
-                    shareId={activeShare.id}
-                    isOwner={true}
-                    allowComments={activeShare.allow_comments}
-                  />
-                </CardContent>
-              </Card>
+              <div className="2xl:col-span-1 min-w-0 max-w-full overflow-hidden">
+                <Card className="sticky top-20 sm:top-24 h-fit max-h-[calc(100vh-8rem)] overflow-hidden">
+                  <CardHeader className="pb-2 flex-shrink-0">
+                    <CardTitle className="flex items-center gap-1 sm:gap-2 text-sm sm:text-base">
+                      <MessageSquare className="h-4 w-4 sm:h-5 sm:w-5" />
+                      Feedback
+                    </CardTitle>
+                    <CardDescription className="text-xs sm:text-sm">
+                      Comments from reviewers
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-2 sm:p-3 lg:p-4 overflow-y-auto max-h-[calc(100vh-12rem)]">
+                    <CoverLetterFeedbackPanel
+                      coverLetterId={materialId}
+                      shareId={activeShare.id}
+                      isOwner={true}
+                      allowComments={activeShare.allow_comments}
+                    />
+                  </CardContent>
+                </Card>
+              </div>
             </div>
           )}
         </div>
+          </div>
+        </main>
       </div>
     </div>
   );

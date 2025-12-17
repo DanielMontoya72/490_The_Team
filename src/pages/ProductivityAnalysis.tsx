@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AppNav } from "@/components/layout/AppNav";
@@ -10,7 +11,7 @@ import { ProductivityPatterns } from "@/components/productivity/ProductivityPatt
 import { BurnoutMonitoring } from "@/components/productivity/BurnoutMonitoring";
 import { ProductivityInsights } from "@/components/productivity/ProductivityInsights";
 import { TimeInvestmentAnalysis } from "@/components/productivity/TimeInvestmentAnalysis";
-import { Clock, TrendingUp, AlertTriangle, Target } from "lucide-react";
+import { Clock, TrendingUp, AlertTriangle, Target, Code2, Users, Brain, ChevronRight, BookOpen } from "lucide-react";
 
 export default function ProductivityAnalysis() {
   const [selectedPeriod, setSelectedPeriod] = useState(30);

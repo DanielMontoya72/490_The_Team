@@ -147,7 +147,7 @@ export function AddSalaryEntryDialog({ open, onOpenChange, onSuccess }: AddSalar
           {/* Job Details */}
           <div className="space-y-4">
             <h4 className="font-medium">Job Details</h4>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="job_title">Job Title *</Label>
                 <Input
@@ -190,7 +190,7 @@ export function AddSalaryEntryDialog({ open, onOpenChange, onSuccess }: AddSalar
           {/* Compensation */}
           <div className="space-y-4">
             <h4 className="font-medium">Compensation</h4>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="base_salary">Base Salary *</Label>
                 <Input
@@ -237,7 +237,7 @@ export function AddSalaryEntryDialog({ open, onOpenChange, onSuccess }: AddSalar
           {/* Dates */}
           <div className="space-y-4">
             <h4 className="font-medium">Duration</h4>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="start_date">Start Date *</Label>
                 <Input
@@ -308,7 +308,7 @@ export function AddSalaryEntryDialog({ open, onOpenChange, onSuccess }: AddSalar
                   />
                   <Label htmlFor="negotiation_successful">Negotiation was successful</Label>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="original_offer">Original Offer</Label>
                     <Input

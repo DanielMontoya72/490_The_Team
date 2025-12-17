@@ -57,6 +57,9 @@ export function SalaryAnalyticsDashboard() {
     },
   });
 
+  // Ensure salaryResearch is always an array
+  const salaryData = Array.isArray(salaryResearch) ? salaryResearch : [];
+
   // Fetch user profile for context
   const { data: userProfile } = useQuery({
     queryKey: ['user-profile-salary'],
@@ -106,10 +109,10 @@ export function SalaryAnalyticsDashboard() {
 
   // Calculate negotiation stats
   const negotiationStats = {
-    total: salaryResearch?.filter(r => r.negotiation_outcome).length || 0,
-    successful: salaryResearch?.filter(r => r.negotiation_success).length || 0,
-    avgIncrease: salaryResearch?.reduce((sum, r) => sum + (r.salary_increase_percentage || 0), 0) / 
-      (salaryResearch?.filter(r => r.salary_increase_percentage).length || 1) || 0,
+    total: salaryData.filter(r => r.negotiation_outcome).length || 0,
+    successful: salaryData.filter(r => r.negotiation_success).length || 0,
+    avgIncrease: salaryData.reduce((sum, r) => sum + (r.salary_increase_percentage || 0), 0) / 
+      (salaryData.filter(r => r.salary_increase_percentage).length || 1) || 0,
   };
 
   // Generate AI analysis
@@ -119,8 +122,8 @@ export function SalaryAnalyticsDashboard() {
         body: {
           salaryProgression: salaryProgression || [],
           currentCompensation,
-          marketData: salaryResearch?.[0] || {},
-          negotiationHistory: salaryResearch?.filter(r => r.negotiation_outcome) || [],
+          marketData: salaryData[0] || {},
+          negotiationHistory: salaryData.filter(r => r.negotiation_outcome) || [],
           industry: userProfile?.industry || currentEntry?.industry,
           location: userProfile?.location || currentEntry?.location,
           yearsExperience,
@@ -158,9 +161,9 @@ export function SalaryAnalyticsDashboard() {
         .insert({
           user_id: user.id,
           current_total_compensation: currentCompensation,
-          market_median: salaryResearch?.[0]?.median_salary,
-          market_percentile_25: salaryResearch?.[0]?.percentile_25,
-          market_percentile_75: salaryResearch?.[0]?.percentile_75,
+          market_median: salaryData[0]?.median_salary,
+          market_percentile_25: salaryData[0]?.percentile_25,
+          market_percentile_75: salaryData[0]?.percentile_75,
           market_position: analysis?.market_position_analysis?.position_label || 'unknown',
           percentile_rank: analysis?.market_position_analysis?.current_percentile,
           industry: currentEntry?.industry,
@@ -282,7 +285,7 @@ export function SalaryAnalyticsDashboard() {
 
       {/* Main Content Tabs */}
       <Tabs defaultValue="progression" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
           <TabsTrigger value="progression">Progression</TabsTrigger>
           <TabsTrigger value="market">Market Position</TabsTrigger>
           <TabsTrigger value="negotiation">Negotiation</TabsTrigger>
@@ -305,7 +308,7 @@ export function SalaryAnalyticsDashboard() {
           <MarketPositionCard 
             analysis={analysis?.market_position_analysis}
             currentCompensation={currentCompensation}
-            marketData={salaryResearch?.[0]}
+            marketData={salaryData[0]}
           />
         </TabsContent>
 
@@ -313,7 +316,7 @@ export function SalaryAnalyticsDashboard() {
           <NegotiationPerformance 
             stats={negotiationStats}
             analysis={analysis?.negotiation_performance}
-            history={salaryResearch?.filter(r => r.negotiation_outcome) || []}
+            history={salaryData.filter(r => r.negotiation_outcome)}
           />
         </TabsContent>
 

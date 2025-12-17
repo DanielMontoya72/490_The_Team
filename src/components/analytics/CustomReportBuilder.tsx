@@ -830,11 +830,11 @@ export function CustomReportBuilder() {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="metrics" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="metrics">Metrics</TabsTrigger>
-              <TabsTrigger value="dates">Date Range</TabsTrigger>
-              <TabsTrigger value="filters">Filters</TabsTrigger>
-              <TabsTrigger value="templates">Templates</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
+              <TabsTrigger value="metrics" className="text-xs sm:text-sm px-1 sm:px-2">Metrics</TabsTrigger>
+              <TabsTrigger value="dates" className="text-xs sm:text-sm px-1 sm:px-2">Date Range</TabsTrigger>
+              <TabsTrigger value="filters" className="text-xs sm:text-sm px-1 sm:px-2">Filters</TabsTrigger>
+              <TabsTrigger value="templates" className="text-xs sm:text-sm px-1 sm:px-2">Templates</TabsTrigger>
             </TabsList>
 
             <TabsContent value="metrics" className="space-y-4">

@@ -144,18 +144,19 @@ export function NetworkingEventGoals({ eventId }: { eventId: string }) {
   };
 
   return (
-    <Card>
+    <Card className="w-full max-w-full overflow-hidden">
       <CardHeader>
-        <div className="flex justify-between items-center">
-          <CardTitle className="flex items-center gap-2">
-            <Target className="h-5 w-5" />
-            Event Goals
+        <div className="flex justify-between items-center gap-2">
+          <CardTitle className="flex items-center gap-2 min-w-0">
+            <Target className="h-5 w-5 flex-shrink-0" />
+            <span className="truncate">Event Goals</span>
           </CardTitle>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button size="sm">
+              <Button size="sm" className="flex-shrink-0">
                 <Plus className="h-4 w-4 mr-1" />
-                Add Goal
+                <span className="hidden sm:inline">Add Goal</span>
+                <span className="sm:hidden">Add</span>
               </Button>
             </DialogTrigger>
             <DialogContent>
@@ -218,28 +219,30 @@ export function NetworkingEventGoals({ eventId }: { eventId: string }) {
             No goals set yet. Add your first goal!
           </p>
         ) : (
-           <div className="space-y-4">
+           <div className="space-y-4 w-full max-w-full overflow-hidden">
             {goals.map((goal: any) => (
-              <div key={goal.id} className="border rounded-lg p-4 space-y-2">
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline">
+              <div key={goal.id} className="border rounded-lg p-4 space-y-2 w-full max-w-full overflow-hidden">
+                <div className="flex justify-between items-start gap-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Badge variant="outline" className="flex-shrink-0">
                         {goalTypeLabels[goal.goal_type as keyof typeof goalTypeLabels]}
                       </Badge>
                       {goal.is_achieved ? (
-                        <Badge variant="default" className="flex items-center gap-1 bg-green-500">
+                        <Badge variant="default" className="flex items-center gap-1 bg-green-500 flex-shrink-0">
                           <CheckCircle className="h-3 w-3" />
-                          Achieved
+                          <span className="hidden sm:inline">Achieved</span>
+                          <span className="sm:hidden">✓</span>
                         </Badge>
                       ) : (
-                        <Badge variant="secondary" className="flex items-center gap-1">
+                        <Badge variant="secondary" className="flex items-center gap-1 flex-shrink-0">
                           <TrendingUp className="h-3 w-3" />
-                          In Progress
+                          <span className="hidden sm:inline">In Progress</span>
+                          <span className="sm:hidden">→</span>
                         </Badge>
                       )}
                     </div>
-                    <p className="text-sm mt-2">{goal.goal_description}</p>
+                    <p className="text-sm mt-2 break-words">{goal.goal_description}</p>
                   </div>
                 </div>
 
@@ -256,11 +259,11 @@ export function NetworkingEventGoals({ eventId }: { eventId: string }) {
                       className="h-2"
                     />
                     {!goal.is_achieved && (
-                      <div className="flex gap-2">
+                      <div className="flex flex-col sm:flex-row gap-2">
                         <Input
                           type="number"
                           placeholder="Update progress"
-                          className="w-32"
+                          className="w-full sm:w-32"
                           id={`progress-${goal.id}`}
                           onKeyDown={(e) => {
                             if (e.key === 'Enter') {
@@ -275,7 +278,7 @@ export function NetworkingEventGoals({ eventId }: { eventId: string }) {
                         <Button
                           size="sm"
                           variant="ghost"
-                          className="px-2"
+                          className="px-2 w-full sm:w-auto"
                           onClick={() => {
                             const input = document.getElementById(`progress-${goal.id}`) as HTMLInputElement;
                             const value = parseInt(input.value);
@@ -286,12 +289,14 @@ export function NetworkingEventGoals({ eventId }: { eventId: string }) {
                           }}
                         >
                           <ArrowRight className="h-4 w-4" />
+                          <span className="sm:hidden ml-2">Update</span>
                         </Button>
                         {goal.actual_value >= goal.target_value && (
                           <Button
                             size="sm"
                             variant="default"
                             onClick={() => markAchieved.mutate(goal.id)}
+                            className="w-full sm:w-auto"
                           >
                             <CheckCircle className="h-4 w-4 mr-1" />
                             Mark Achieved

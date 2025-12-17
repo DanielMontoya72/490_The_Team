@@ -1,5 +1,7 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Link } from 'react-router-dom';
 import { AppNav } from '@/components/layout/AppNav';
+import { AnalyticsSidebar } from '@/components/layout/AnalyticsSidebar';
 import { JobSearchTimelineForecast } from '@/components/analytics/JobSearchTimelineForecast';
 import { SalaryNegotiationOutcomePredictor } from '@/components/analytics/SalaryNegotiationOutcomePredictor';
 import { JobSearchScenarioPlanner } from '@/components/analytics/JobSearchScenarioPlanner';
@@ -73,96 +75,106 @@ export default function PredictiveAnalytics() {
   } : undefined;
 
   return (
-    <div className="min-h-screen bg-background">
+    <>
       <AppNav />
-      <div className="container mx-auto p-6 space-y-6">
-        <div className="space-y-2">
-          <div className="flex items-center gap-3">
-            <Sparkles className="h-8 w-8 text-primary" />
-            <h1 className="text-3xl font-bold">Predictive Analytics</h1>
+      
+      <div className="flex min-h-screen bg-background pt-16">
+        <AnalyticsSidebar />
+
+        {/* Main Content */}
+        <main className="flex-1 overflow-hidden lg:ml-56">
+          <div className="h-full overflow-y-auto">
+            <div className="container mx-auto px-4 py-8 max-w-7xl lg:pt-0 pt-16">
+              <div className="space-y-2 mb-6">
+                <div className="flex items-center gap-3">
+                  <Sparkles className="h-8 w-8 text-primary" />
+                  <h1 className="text-3xl font-bold">Predictive Analytics</h1>
+                </div>
+                <p className="text-muted-foreground">
+                  Anticipate future outcomes and optimize your job search strategy with AI-powered predictions
+                </p>
+              </div>
+
+              <Tabs defaultValue="timeline" className="space-y-6">
+                <TabsList className="grid w-full grid-cols-3 lg:grid-cols-5 xl:grid-cols-9 bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-950/30 dark:to-pink-950/30">
+                  <TabsTrigger value="timeline" className="data-[state=active]:bg-purple-500 data-[state=active]:text-white gap-2">
+                    <Calendar className="h-4 w-4" />
+                    <span className="hidden sm:inline">Timeline</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="salary" className="data-[state=active]:bg-green-500 data-[state=active]:text-white gap-2">
+                    <DollarSign className="h-4 w-4" />
+                    <span className="hidden sm:inline">Salary</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="scenarios" className="data-[state=active]:bg-blue-500 data-[state=active]:text-white gap-2">
+                    <GitBranch className="h-4 w-4" />
+                    <span className="hidden sm:inline">Scenarios</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="patterns" className="data-[state=active]:bg-orange-500 data-[state=active]:text-white gap-2">
+                    <TrendingUp className="h-4 w-4" />
+                    <span className="hidden sm:inline">Patterns</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="accuracy" className="data-[state=active]:bg-indigo-500 data-[state=active]:text-white gap-2">
+                    <Target className="h-4 w-4" />
+                    <span className="hidden sm:inline">Accuracy</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="reports" className="data-[state=active]:bg-violet-500 data-[state=active]:text-white gap-2">
+                    <FileText className="h-4 w-4" />
+                    <span className="hidden sm:inline">Reports</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="recommendations" className="data-[state=active]:bg-pink-500 data-[state=active]:text-white gap-2">
+                    <Lightbulb className="h-4 w-4" />
+                    <span className="hidden sm:inline">AI Advice</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="insights" className="data-[state=active]:bg-cyan-500 data-[state=active]:text-white gap-2">
+                    <Brain className="h-4 w-4" />
+                    <span className="hidden sm:inline">Insights</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="improvement" className="data-[state=active]:bg-teal-500 data-[state=active]:text-white gap-2">
+                    <LineChart className="h-4 w-4" />
+                    <span className="hidden sm:inline">Growth</span>
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="timeline" className="space-y-6">
+                  <JobSearchTimelineForecast />
+                </TabsContent>
+
+                <TabsContent value="salary" className="space-y-6">
+                  <SalaryNegotiationOutcomePredictor />
+                </TabsContent>
+
+                <TabsContent value="scenarios" className="space-y-6">
+                  <JobSearchScenarioPlanner />
+                </TabsContent>
+
+                <TabsContent value="patterns" className="space-y-6">
+                  <SuccessPatternRecognition />
+                </TabsContent>
+
+                <TabsContent value="accuracy" className="space-y-6">
+                  <InterviewPredictionAccuracy />
+                </TabsContent>
+
+                <TabsContent value="reports" className="space-y-6">
+                  <CustomReportBuilder />
+                </TabsContent>
+
+                <TabsContent value="recommendations" className="space-y-6">
+                  <PersonalizedRecommendations data={analyticsData} metrics={metrics} />
+                </TabsContent>
+
+                <TabsContent value="insights" className="space-y-6">
+                  <StrategyInsights data={analyticsData} />
+                </TabsContent>
+
+                <TabsContent value="improvement" className="space-y-6">
+                  <ImprovementTimeline data={analyticsData} />
+                </TabsContent>
+              </Tabs>
+            </div>
           </div>
-          <p className="text-muted-foreground">
-            Anticipate future outcomes and optimize your job search strategy with AI-powered predictions
-          </p>
-        </div>
-
-        <Tabs defaultValue="timeline" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 lg:grid-cols-5 xl:grid-cols-9 bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-950/30 dark:to-pink-950/30">
-            <TabsTrigger value="timeline" className="data-[state=active]:bg-purple-500 data-[state=active]:text-white gap-2">
-              <Calendar className="h-4 w-4" />
-              <span className="hidden sm:inline">Timeline</span>
-            </TabsTrigger>
-            <TabsTrigger value="salary" className="data-[state=active]:bg-green-500 data-[state=active]:text-white gap-2">
-              <DollarSign className="h-4 w-4" />
-              <span className="hidden sm:inline">Salary</span>
-            </TabsTrigger>
-            <TabsTrigger value="scenarios" className="data-[state=active]:bg-blue-500 data-[state=active]:text-white gap-2">
-              <GitBranch className="h-4 w-4" />
-              <span className="hidden sm:inline">Scenarios</span>
-            </TabsTrigger>
-            <TabsTrigger value="patterns" className="data-[state=active]:bg-orange-500 data-[state=active]:text-white gap-2">
-              <TrendingUp className="h-4 w-4" />
-              <span className="hidden sm:inline">Patterns</span>
-            </TabsTrigger>
-            <TabsTrigger value="accuracy" className="data-[state=active]:bg-indigo-500 data-[state=active]:text-white gap-2">
-              <Target className="h-4 w-4" />
-              <span className="hidden sm:inline">Accuracy</span>
-            </TabsTrigger>
-            <TabsTrigger value="reports" className="data-[state=active]:bg-violet-500 data-[state=active]:text-white gap-2">
-              <FileText className="h-4 w-4" />
-              <span className="hidden sm:inline">Reports</span>
-            </TabsTrigger>
-            <TabsTrigger value="recommendations" className="data-[state=active]:bg-pink-500 data-[state=active]:text-white gap-2">
-              <Lightbulb className="h-4 w-4" />
-              <span className="hidden sm:inline">AI Advice</span>
-            </TabsTrigger>
-            <TabsTrigger value="insights" className="data-[state=active]:bg-cyan-500 data-[state=active]:text-white gap-2">
-              <Brain className="h-4 w-4" />
-              <span className="hidden sm:inline">Insights</span>
-            </TabsTrigger>
-            <TabsTrigger value="improvement" className="data-[state=active]:bg-teal-500 data-[state=active]:text-white gap-2">
-              <LineChart className="h-4 w-4" />
-              <span className="hidden sm:inline">Growth</span>
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="timeline" className="space-y-6">
-            <JobSearchTimelineForecast />
-          </TabsContent>
-
-          <TabsContent value="salary" className="space-y-6">
-            <SalaryNegotiationOutcomePredictor />
-          </TabsContent>
-
-          <TabsContent value="scenarios" className="space-y-6">
-            <JobSearchScenarioPlanner />
-          </TabsContent>
-
-          <TabsContent value="patterns" className="space-y-6">
-            <SuccessPatternRecognition />
-          </TabsContent>
-
-          <TabsContent value="accuracy" className="space-y-6">
-            <InterviewPredictionAccuracy />
-          </TabsContent>
-
-          <TabsContent value="reports" className="space-y-6">
-            <CustomReportBuilder />
-          </TabsContent>
-
-          <TabsContent value="recommendations" className="space-y-6">
-            <PersonalizedRecommendations data={analyticsData} metrics={metrics} />
-          </TabsContent>
-
-          <TabsContent value="insights" className="space-y-6">
-            <StrategyInsights data={analyticsData} />
-          </TabsContent>
-
-          <TabsContent value="improvement" className="space-y-6">
-            <ImprovementTimeline data={analyticsData} />
-          </TabsContent>
-        </Tabs>
+        </main>
       </div>
-    </div>
+    </>
   );
 }

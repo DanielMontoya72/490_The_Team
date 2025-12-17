@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, Sparkles, Edit3, MessageSquare, Code2 } from "lucide-react";
+import { TrendingUp, Sparkles, Edit3, MessageSquare, Code2, Target, Clock, Users, Brain, ChevronRight, BookOpen } from "lucide-react";
 import { TechnicalPrepDashboard } from "@/components/jobs/TechnicalPrepDashboard";
 import { JobBasedTechnicalPrep } from "@/components/jobs/JobBasedTechnicalPrep";
 import { WritingPracticeSession } from "@/components/jobs/WritingPracticeSession";
@@ -34,16 +35,132 @@ const TechnicalPrep = () => {
   });
 
   return (
-    <div className="min-h-screen bg-background">
+    <>
       <AppNav />
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex items-center gap-3 mb-8">
-          <Code2 className="h-8 w-8 text-primary" />
-          <div>
-            <h1 className="text-3xl font-bold">Technical Interview Prep</h1>
-            <p className="text-muted-foreground">Practice coding challenges, system design, and case studies</p>
+      
+      <div className="flex min-h-screen bg-background pt-16">
+        {/* Preparation Quick Actions Sidebar - Mobile Dropdown */}
+        <aside className="lg:hidden fixed left-0 top-16 right-0 bg-card/80 backdrop-blur-md border-b z-40">
+          <details className="group">
+            <summary className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-muted/50 transition-colors">
+              <div className="flex items-center gap-2">
+                <Brain className="h-4 w-4 text-primary flex-shrink-0" />
+                <h3 className="font-bold text-base text-white">Preparation Hub</h3>
+              </div>
+              <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-90" />
+            </summary>
+            <div className="px-4 pb-4 space-y-1 bg-card border-t">
+              <Link
+                to="/preparation-hub"
+                className="w-full flex items-center gap-2.5 px-2.5 py-3 rounded-lg hover:bg-muted/50 transition-colors group min-h-[40px]"
+              >
+                <Brain className="h-4 w-4 text-white transition-colors flex-shrink-0" />
+                <span className="text-sm font-medium text-white group-hover:text-primary transition-colors truncate text-left leading-relaxed">Hub Overview</span>
+              </Link>
+              <Link
+                to="/skill-development"
+                className="w-full flex items-center gap-2.5 px-2.5 py-3 rounded-lg hover:bg-muted/50 transition-colors group min-h-[40px]"
+              >
+                <BookOpen className="h-4 w-4 text-white transition-colors flex-shrink-0" />
+                <span className="text-sm font-medium text-white group-hover:text-primary transition-colors truncate text-left leading-relaxed">Skills</span>
+              </Link>
+              <Link
+                to="/career-goals"
+                className="w-full flex items-center gap-2.5 px-2.5 py-3 rounded-lg hover:bg-muted/50 transition-colors group min-h-[40px]"
+              >
+                <Target className="h-4 w-4 text-white transition-colors flex-shrink-0" />
+                <span className="text-sm font-medium text-white group-hover:text-primary transition-colors truncate text-left leading-relaxed">Goals</span>
+              </Link>
+              <Link
+                to="/mock-interview"
+                className="w-full flex items-center gap-2.5 px-2.5 py-3 rounded-lg hover:bg-muted/50 transition-colors group min-h-[40px]"
+              >
+                <Users className="h-4 w-4 text-white transition-colors flex-shrink-0" />
+                <span className="text-sm font-medium text-white group-hover:text-primary transition-colors truncate text-left leading-relaxed">Mock Interview</span>
+              </Link>
+              <Link
+                to="/technical-prep"
+                className="w-full flex items-center gap-2.5 px-2.5 py-3 rounded-lg bg-primary/10 border border-primary/20 transition-colors group min-h-[40px]"
+              >
+                <Code2 className="h-4 w-4 text-primary transition-colors flex-shrink-0" />
+                <span className="text-sm font-medium text-primary transition-colors truncate text-left leading-relaxed">Technical Prep</span>
+              </Link>
+              <Link
+                to="/productivity-analysis"
+                className="w-full flex items-center gap-2.5 px-2.5 py-3 rounded-lg hover:bg-muted/50 transition-colors group min-h-[40px]"
+              >
+                <Clock className="h-4 w-4 text-white transition-colors flex-shrink-0" />
+                <span className="text-sm font-medium text-white group-hover:text-primary transition-colors truncate text-left leading-relaxed">Productivity</span>
+              </Link>
+            </div>
+          </details>
+        </aside>
+
+        {/* Preparation Quick Actions Sidebar - Desktop */}
+        <aside className="hidden lg:block w-56 bg-card border-r overflow-y-auto flex-shrink-0">
+          <div className="p-3 sticky top-16">
+            <div className="flex items-center gap-2 mb-3">
+              <Brain className="h-4 w-4 text-primary flex-shrink-0" />
+              <h3 className="font-bold text-base text-white">Preparation Hub</h3>
+            </div>
+            <div className="space-y-1">
+              <Link
+                to="/preparation-hub"
+                className="w-full flex items-center gap-2.5 px-2.5 py-3 rounded-lg hover:bg-muted transition-colors group min-h-[40px]"
+              >
+                <Brain className="h-4 w-4 text-white transition-colors flex-shrink-0" />
+                <span className="text-sm font-medium text-white group-hover:text-primary transition-colors truncate text-left leading-relaxed">Hub Overview</span>
+              </Link>
+              <Link
+                to="/skill-development"
+                className="w-full flex items-center gap-2.5 px-2.5 py-3 rounded-lg hover:bg-muted transition-colors group min-h-[40px]"
+              >
+                <BookOpen className="h-4 w-4 text-white transition-colors flex-shrink-0" />
+                <span className="text-sm font-medium text-white group-hover:text-primary transition-colors truncate text-left leading-relaxed">Skills</span>
+              </Link>
+              <Link
+                to="/career-goals"
+                className="w-full flex items-center gap-2.5 px-2.5 py-3 rounded-lg hover:bg-muted transition-colors group min-h-[40px]"
+              >
+                <Target className="h-4 w-4 text-white transition-colors flex-shrink-0" />
+                <span className="text-sm font-medium text-white group-hover:text-primary transition-colors truncate text-left leading-relaxed">Goals</span>
+              </Link>
+              <Link
+                to="/mock-interview"
+                className="w-full flex items-center gap-2.5 px-2.5 py-3 rounded-lg hover:bg-muted transition-colors group min-h-[40px]"
+              >
+                <Users className="h-4 w-4 text-white transition-colors flex-shrink-0" />
+                <span className="text-sm font-medium text-white group-hover:text-primary transition-colors truncate text-left leading-relaxed">Mock Interview</span>
+              </Link>
+              <Link
+                to="/technical-prep"
+                className="w-full flex items-center gap-2.5 px-2.5 py-3 rounded-lg bg-primary/10 border border-primary/20 transition-colors group min-h-[40px]"
+              >
+                <Code2 className="h-4 w-4 text-primary transition-colors flex-shrink-0" />
+                <span className="text-sm font-medium text-primary transition-colors truncate text-left leading-relaxed">Technical Prep</span>
+              </Link>
+              <Link
+                to="/productivity-analysis"
+                className="w-full flex items-center gap-2.5 px-2.5 py-3 rounded-lg hover:bg-muted transition-colors group min-h-[40px]"
+              >
+                <Clock className="h-4 w-4 text-white transition-colors flex-shrink-0" />
+                <span className="text-sm font-medium text-white group-hover:text-primary transition-colors truncate text-left leading-relaxed">Productivity</span>
+              </Link>
+            </div>
           </div>
-        </div>
+        </aside>
+
+        {/* Main Content */}
+        <main className="flex-1 overflow-hidden">
+          <div className="h-full overflow-y-auto">
+            <div className="container mx-auto px-4 py-8 max-w-7xl lg:pt-0 pt-16">
+              <div className="flex items-center gap-3 mb-8">
+                <Code2 className="h-8 w-8 text-primary" />
+                <div>
+                  <h1 className="text-3xl font-bold">Technical Interview Prep</h1>
+                  <p className="text-muted-foreground">Practice coding challenges, system design, and case studies</p>
+                </div>
+              </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-4 mb-8 h-auto">
@@ -114,8 +231,11 @@ const TechnicalPrep = () => {
             <TechnicalPrepDashboard />
           </TabsContent>
         </Tabs>
+            </div>
+          </div>
+        </main>
       </div>
-    </div>
+    </>
   );
 };
 

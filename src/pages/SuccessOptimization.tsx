@@ -32,8 +32,10 @@ export default function SuccessOptimization() {
   return (
     <>
       
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/30">
-        <AppNav />
+      <div className="min-h-screen">
+        <div className="[&_nav]:backdrop-blur-none [&_nav]:bg-background">
+          <AppNav />
+        </div>
         
         <main className="container mx-auto px-4 py-8">
           {/* Header */}

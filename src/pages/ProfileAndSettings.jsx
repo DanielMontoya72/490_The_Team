@@ -25,7 +25,7 @@ const ProfileAndSettings = () => {
         My Account
       </Link>
 
-      <div>
+      <div className="pt-24">
         <div className="flex items-center gap-1">
           <Link
             to="/professional-info"
@@ -37,6 +37,8 @@ const ProfileAndSettings = () => {
           <button
             onClick={() => setIsProfessionalInfoExpanded(!isProfessionalInfoExpanded)}
             className="px-2 py-1.5 rounded-lg hover:bg-muted transition-colors"
+            aria-label={isProfessionalInfoExpanded ? "Collapse Professional Info menu" : "Expand Professional Info menu"}
+            aria-expanded={isProfessionalInfoExpanded}
           >
             <ChevronRight className={`h-4 w-4 transition-transform ${isProfessionalInfoExpanded ? 'rotate-90' : ''}`} />
           </button>
@@ -92,7 +94,7 @@ const ProfileAndSettings = () => {
 
       <Link
         to="/settings"
-        className="w-full text-left px-3 py-1.5 rounded-lg hover:bg-muted transition-colors text-sm flex items-center gap-2"
+        className="w-full text-left px-3 py-1.5 rounded-lg hover:bg-muted transition-colors text-sm flex items-center gap-2 mt-10"
       >
         <SettingsIcon className="h-4 w-4" />
         Settings & Account
@@ -125,44 +127,69 @@ const ProfileAndSettings = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-muted overflow-x-hidden">
+    <>
       <AppNav />
-      <LeftSidebar>
-        {sidebarContent}
-      </LeftSidebar>
       
-      <main className="pt-20 md:pt-6 md:ml-64 w-full">
-        <div className="container mx-auto px-4 py-8 md:py-12">
-          <div className="text-center mb-8 animate-fade-in">
-            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-2 break-words">
-              Profile & Settings
-            </h1>
-            <p className="text-muted-foreground text-base md:text-lg">
-              Manage your profile, professional information, and account settings
-            </p>
+      <div className="flex min-h-screen bg-gradient-to-br from-background to-muted pt-16">
+        {/* Left Sidebar - Mobile Dropdown */}
+        <aside className="xl:hidden fixed left-0 top-16 right-0 bg-card/70 backdrop-blur-lg border-b border-primary/90 shadow-lg z-40">
+          <details className="group">
+            <summary className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-muted/50 transition-colors" aria-label="Toggle navigation menu">
+              <div className="flex items-center gap-3">
+                <User className="h-5 w-5 text-primary flex-shrink-0" />
+                <h3 className="font-bold text-base text-foreground">Navigate</h3>
+              </div>
+              <svg className="h-4 w-6 transition-transform group-open:rotate-180 text-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </summary>
+            <div className="px-4 pb-4 space-y-2 border-t bg-background/80 backdrop-blur-md">
+              {sidebarContent}
+            </div>
+          </details>
+        </aside>
+
+        {/* Desktop Sidebar */}
+        <aside className="hidden xl:block w-64 bg-card/70 backdrop-blur-lg border-r border-primary/90 shadow-lg">
+          <div className="p-6 h-full overflow-y-auto">
+            {sidebarContent}
           </div>
+        </aside>
 
-          <div className="w-full max-w-6xl mx-auto space-y-8">
-            {/* Overview Dashboard */}
-            <div id="overview" className="scroll-mt-20">
-              <ProfileDashboard userId={session.user.id} />
+        {/* Main Content */}
+        <main id="main-content" className="flex-1 xl:w-[calc(100%-16rem)] p-4 md:p-6 lg:p-8 pt-20 xl:pt-16 overflow-auto">
+          <div className="w-full max-w-7xl mx-auto">
+            <div className="text-center mb-6 md:mb-8 animate-fade-in">
+              <h1 className="text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold mb-2">
+                Profile & Settings
+              </h1>
+              <p className="text-muted-foreground text-sm md:text-base lg:text-lg">
+                Manage your profile, professional information, and account settings
+              </p>
             </div>
 
-            {/* Basic Information */}
-            <div id="basic-info" className="bg-card rounded-lg border shadow-sm p-4 md:p-6 lg:p-8 scroll-mt-20">
-              <h2 className="text-2xl font-bold mb-6 break-words">Basic Information</h2>
-              <BasicInfoForm userId={session.user.id} />
-            </div>
+            <div className="space-y-6 md:space-y-8 w-full">
+              {/* Overview Dashboard */}
+              <div id="overview" className="scroll-mt-20">
+                <ProfileDashboard userId={session.user.id} />
+              </div>
 
-            {/* External Skill Platforms */}
-            <div id="external-platforms" className="bg-card rounded-lg border shadow-sm p-4 md:p-6 lg:p-8 scroll-mt-20">
-              <h2 className="text-2xl font-bold mb-6 break-words">External Skill Platforms</h2>
-              <ExternalSkillPlatforms userId={session.user.id} />
+              {/* Basic Information */}
+              <div id="basic-info" className="bg-card rounded-lg border shadow-sm p-4 md:p-6 lg:p-8 scroll-mt-20">
+                <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6">Basic Information</h2>
+                <BasicInfoForm userId={session.user.id} />
+              </div>
+
+              {/* External Skill Platforms */}
+              <div id="external-platforms" className="bg-card rounded-lg border shadow-sm p-4 md:p-6 lg:p-8 scroll-mt-20">
+                <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6">External Skill Platforms</h2>
+                <ExternalSkillPlatforms userId={session.user.id} />
+              </div>
             </div>
           </div>
-        </div>
-      </main>
-    </div>
+        </main>
+      </div>
+    </>
   );
 };
 

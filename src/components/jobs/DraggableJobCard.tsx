@@ -7,12 +7,18 @@ import { GripVertical, Building2, DollarSign, Calendar, CheckSquare, ChevronDown
 import { JobMatchScore } from './JobMatchScore';
 import { supabase } from '@/integrations/supabase/client';
 import { useState, useEffect } from 'react';
+import { useId } from '@/hooks/useAccessibility';
 
 export function DraggableJobCard({ job, onViewJob, getDaysInStage, selectedJobIds = [], onToggleSelection, setNodeRef, style, handleClick, attributes, listeners, isDragging = false }: any) {
   const { textSize } = useTextSize();
   const textSizeClass = `text-size-${textSize}`;
   const [checklistExpanded, setChecklistExpanded] = useState(false);
   const [checklist, setChecklist] = useState<any>(null);
+  
+  // Generate unique IDs for accessibility
+  const cardId = useId('job-card');
+  const checklistId = useId('checklist');
+  const checkboxId = useId('checkbox');
 
   useEffect(() => {
     if (job?.id) {
@@ -136,6 +142,7 @@ export function DraggableJobCard({ job, onViewJob, getDaysInStage, selectedJobId
   return (
     <Card
       ref={setNodeRef}
+      id={cardId}
       style={{
         ...style,
         transition: style?.transition || 'transform 200ms cubic-bezier(0.25, 0.8, 0.25, 1), opacity 200ms ease',
@@ -145,24 +152,36 @@ export function DraggableJobCard({ job, onViewJob, getDaysInStage, selectedJobId
       className={`p-3 sm:p-4 transition-all duration-200 bg-card group ${textSizeClass} border ${
         isDragging ? 'opacity-50 shadow-2xl scale-105 cursor-grabbing' : 'hover:shadow-md hover:scale-[1.02] cursor-grab'
       } touch-manipulation`}
+      role="article"
+      aria-label={`Job: ${job.job_title} at ${job.company_name}`}
+      tabIndex={isDragging ? -1 : 0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          handleClick();
+        }
+      }}
       {...attributes}
       {...listeners}
     >
       <div 
         className="flex items-start gap-2 sm:gap-3"
         onClick={handleClick}
+        aria-describedby={checklistExpanded ? checklistId : undefined}
       >
         {onToggleSelection && (
           <div onClick={e => e.stopPropagation()}>
             <Checkbox
+              id={checkboxId}
               checked={selectedJobIds.includes(job.id)}
               onCheckedChange={() => onToggleSelection(job.id)}
               onClick={e => e.stopPropagation()}
               className="mt-1.5 flex-shrink-0"
+              aria-label={`Select job ${job.job_title} at ${job.company_name}`}
             />
           </div>
         )}
-        <div className="touch-none select-none flex-shrink-0">
+        <div className="touch-none select-none flex-shrink-0" aria-hidden="true">
           <GripVertical className={`${textSizes.icon} text-muted-foreground flex-shrink-0 mt-0.5 sm:mt-1 transition-colors min-h-[18px] min-w-[18px] sm:min-h-[20px] sm:min-w-[20px]`} />
         </div>
         <div className="flex-1 min-w-0 space-y-1 md:space-y-1.5 lg:space-y-2">
@@ -201,14 +220,24 @@ export function DraggableJobCard({ job, onViewJob, getDaysInStage, selectedJobId
             
             return (
               <div className="space-y-2 mt-2" onClick={e => e.stopPropagation()}>
-                <button
-                  type="button"
+                <div
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
                     setChecklistExpanded(!checklistExpanded);
                   }}
-                  className="w-full flex items-center justify-between p-2 rounded-md hover:bg-muted/50 transition-colors cursor-pointer"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setChecklistExpanded(!checklistExpanded);
+                    }
+                  }}
+                  role="button"
+                  tabIndex={0}
+                  className="w-full flex items-center justify-between p-2 rounded-md hover:bg-muted/50 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                  aria-expanded={checklistExpanded}
+                  aria-label={`${checklistExpanded ? 'Collapse' : 'Expand'} checklist for ${job.job_title}`}
                 >
                   <div className="flex items-center gap-2">
                     <CheckSquare className={`${textSizes.icon} text-primary`} />
@@ -224,7 +253,7 @@ export function DraggableJobCard({ job, onViewJob, getDaysInStage, selectedJobId
                   ) : (
                     <ChevronDown className={textSizes.icon} />
                   )}
-                </button>
+                </div>
 
                 {checklistExpanded && checklist.checklist_items && (
                   <div className="space-y-2 pl-2" onClick={e => e.stopPropagation()}>

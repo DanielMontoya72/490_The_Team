@@ -441,40 +441,40 @@ export function MentorDashboard({ openChatId, onChatOpened }: MentorDashboardPro
       </div>
 
       <Tabs defaultValue="mentors" className="space-y-4">
-        <TabsList className="w-full h-14 grid grid-cols-6 gap-2 bg-transparent p-0 border-b-2 border-primary/20">
+        <TabsList className="w-full min-h-14 flex flex-wrap justify-start gap-1 bg-transparent p-0 border-b-2 border-primary/20">
           <TabsTrigger 
             value="mentors" 
-            className="h-full text-base font-semibold data-[state=active]:bg-transparent data-[state=active]:border-b-4 data-[state=active]:border-primary rounded-none data-[state=active]:shadow-none"
+            className="min-h-12 px-4 py-2 text-xs sm:text-sm font-semibold whitespace-nowrap data-[state=active]:bg-transparent data-[state=active]:border-b-4 data-[state=active]:border-primary rounded-none data-[state=active]:shadow-none"
           >
             My Mentors
           </TabsTrigger>
           <TabsTrigger 
             value="mentees" 
-            className="h-full text-base font-semibold data-[state=active]:bg-transparent data-[state=active]:border-b-4 data-[state=active]:border-primary rounded-none data-[state=active]:shadow-none"
+            className="min-h-12 px-4 py-2 text-xs sm:text-sm font-semibold whitespace-nowrap data-[state=active]:bg-transparent data-[state=active]:border-b-4 data-[state=active]:border-primary rounded-none data-[state=active]:shadow-none"
           >
             My Mentees
           </TabsTrigger>
           <TabsTrigger 
             value="invitations" 
-            className="h-full text-base font-semibold data-[state=active]:bg-transparent data-[state=active]:border-b-4 data-[state=active]:border-primary rounded-none data-[state=active]:shadow-none"
+            className="min-h-12 px-4 py-2 text-xs sm:text-sm font-semibold whitespace-nowrap data-[state=active]:bg-transparent data-[state=active]:border-b-4 data-[state=active]:border-primary rounded-none data-[state=active]:shadow-none"
           >
             Invitations
           </TabsTrigger>
           <TabsTrigger 
             value="feedback" 
-            className="h-full text-base font-semibold data-[state=active]:bg-transparent data-[state=active]:border-b-4 data-[state=active]:border-primary rounded-none data-[state=active]:shadow-none"
+            className="min-h-12 px-4 py-2 text-xs sm:text-sm font-semibold whitespace-nowrap data-[state=active]:bg-transparent data-[state=active]:border-b-4 data-[state=active]:border-primary rounded-none data-[state=active]:shadow-none"
           >
             Feedback
           </TabsTrigger>
           <TabsTrigger 
             value="progress" 
-            className="h-full text-base font-semibold data-[state=active]:bg-transparent data-[state=active]:border-b-4 data-[state=active]:border-primary rounded-none data-[state=active]:shadow-none"
+            className="min-h-12 px-4 py-2 text-xs sm:text-sm font-semibold whitespace-nowrap data-[state=active]:bg-transparent data-[state=active]:border-b-4 data-[state=active]:border-primary rounded-none data-[state=active]:shadow-none"
           >
             Progress Reports
           </TabsTrigger>
           <TabsTrigger 
             value="reviews" 
-            className="h-full text-base font-semibold data-[state=active]:bg-transparent data-[state=active]:border-b-4 data-[state=active]:border-primary rounded-none data-[state=active]:shadow-none"
+            className="min-h-12 px-4 py-2 text-xs sm:text-sm font-semibold whitespace-nowrap data-[state=active]:bg-transparent data-[state=active]:border-b-4 data-[state=active]:border-primary rounded-none data-[state=active]:shadow-none"
           >
             <FileText className="h-4 w-4 mr-2" />
             Reviews

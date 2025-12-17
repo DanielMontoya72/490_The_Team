@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { AppNav } from '@/components/layout/AppNav';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -12,13 +12,22 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { FileText, Plus, Download, Eye, Trash2, Edit3, Archive, FileDown, BarChart3, Share2 } from 'lucide-react';
+import { FileText, Plus, Download, Eye, Trash2, Edit3, Archive, FileDown, BarChart3, Share2, FolderOpen, FlaskConical, Layout, Book, Rocket, HelpCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { CoverLetterPerformance } from '@/components/jobs/CoverLetterPerformance';
 import { TrackCoverLetterDialog } from '@/components/jobs/TrackCoverLetterDialog';
 import { CoverLetterShareDialog } from '@/components/coverletter/CoverLetterShareDialog';
 import { useTextSize } from '@/components/text-size-provider';
+import { cn } from '@/lib/utils';
 import jsPDF from 'jspdf';
+
+// Document Management sidebar navigation
+const docManagementNavigation = [
+  { to: "/doc-management", icon: Layout, label: "Doc Management" },
+  { to: "/resumes", icon: FileText, label: "Resumes" },
+  { to: "/cover-letters", icon: BarChart3, label: "Cover Letters" },
+  { to: "/ab-testing", icon: FlaskConical, label: "A/B Testing" },
+];
 
 interface CoverLetter {
   id: string;
@@ -32,6 +41,7 @@ interface CoverLetter {
 
 export default function CoverLetters() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { textSize } = useTextSize();
   const [searchParams] = useSearchParams();
   const jobId = searchParams.get('jobId');
@@ -366,35 +376,131 @@ export default function CoverLetters() {
     }
   };
 
-  return (
-    <div className="min-h-screen bg-background">
-      <AppNav />
-      <div className="container max-w-[1600px] mx-auto px-4 py-8">
-        <div className="mb-6">
-          {job && (
-            <div className="mb-4">
-              <h1 className={`${textSizes.title} font-bold`}>Cover Letters for {job.job_title}</h1>
-              <p className="text-muted-foreground">{job.company_name}</p>
-            </div>
-          )}
-          {!job && (
-            <h1 className={`${textSizes.title} font-bold mb-2`}>Cover Letters</h1>
-          )}
-        </div>
+  const isActive = (path: string) => location.pathname === path;
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="w-full h-14 grid grid-cols-4 gap-2 bg-transparent p-0 border-b-2 border-primary/20">
-            <TabsTrigger value="list" className={`h-full ${textSizes.body} font-semibold data-[state=active]:bg-transparent data-[state=active]:border-b-4 data-[state=active]:border-primary rounded-none data-[state=active]:shadow-none`}>
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-background to-muted">
+      {/* Skip Links for Screen Readers */}
+      <div className="sr-only focus-within:not-sr-only">
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:absolute focus:top-0 focus:left-0 focus:z-[100] focus:bg-primary focus:text-primary-foreground focus:p-4 focus:underline focus:outline-none focus:ring-2 focus:ring-primary-foreground"
+          tabIndex={0}
+        >
+          Skip to main content
+        </a>
+        <a
+          href="#document-nav"
+          className="sr-only focus:not-sr-only focus:absolute focus:top-0 focus:left-20 focus:z-[100] focus:bg-primary focus:text-primary-foreground focus:p-4 focus:underline focus:outline-none focus:ring-2 focus:ring-primary-foreground"
+          tabIndex={0}
+        >
+          Skip to document navigation
+        </a>
+        <a
+          href="#cover-letter-tabs"
+          className="sr-only focus:not-sr-only focus:absolute focus:top-0 focus:left-40 focus:z-[100] focus:bg-primary focus:text-primary-foreground focus:p-4 focus:underline focus:outline-none focus:ring-2 focus:ring-primary-foreground"
+          tabIndex={0}
+        >
+          Skip to cover letter tabs
+        </a>
+      </div>
+      
+      <AppNav />
+      
+      <div className="relative pt-16 min-h-screen">
+        {/* Sidebar Navigation */}
+        <aside id="document-nav" className="hidden lg:block w-60 bg-card border-2 border-yellow-400 fixed left-0 top-16 h-[calc(100vh-4rem)] overflow-y-auto z-30 rounded-r-lg">
+          <div className="p-4">
+            <div className="flex items-center gap-2 mb-4">
+              <FolderOpen className="h-5 w-5 text-primary flex-shrink-0" />
+              <h3 className="font-bold text-base text-white">Document Hub</h3>
+            </div>
+            <div className="space-y-1">
+              {docManagementNavigation.map((item, index) => {
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={index}
+                    to={item.to}
+                    className={cn(
+                      "flex items-center gap-2.5 px-3 py-2.5 rounded-lg transition-colors group",
+                      isActive(item.to)
+                        ? "bg-primary text-primary-foreground font-semibold"
+                        : "hover:bg-muted text-white hover:text-primary"
+                    )}
+                  >
+                    <Icon className="h-4 w-4 flex-shrink-0" />
+                    <span className="text-sm font-medium">{item.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        </aside>
+
+        {/* Mobile Sidebar Dropdown */}
+        <aside className="lg:hidden fixed left-0 top-16 right-0 bg-card/80 backdrop-blur-md border-2 border-yellow-400 z-40 rounded-b-lg mx-2">
+          <details className="group">
+            <summary className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-muted/50 transition-colors">
+              <div className="flex items-center gap-2">
+                <FolderOpen className="h-4 w-4 text-primary flex-shrink-0" />
+                <h3 className="font-bold text-base text-white">Document Hub</h3>
+              </div>
+              <svg className="h-5 w-5 transition-transform group-open:rotate-180 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </summary>
+            <div className="px-4 pb-4 space-y-1 border-t bg-background/80 backdrop-blur-md">
+              {docManagementNavigation.map((item, index) => {
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={index}
+                    to={item.to}
+                    className={cn(
+                      "flex items-center gap-2.5 px-3 py-2.5 rounded-lg transition-colors group",
+                      isActive(item.to)
+                        ? "bg-primary text-primary-foreground font-semibold"
+                        : "hover:bg-muted/50 text-white hover:text-primary"
+                    )}
+                  >
+                    <Icon className="h-4 w-4 flex-shrink-0" />
+                    <span className="text-sm font-medium">{item.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          </details>
+        </aside>
+
+        {/* Main Content Area */}
+        <main id="main-content" className="flex-1 lg:ml-60 overflow-x-hidden" tabIndex={-1}>
+          <div className="px-2 sm:px-4 md:px-6 py-8 md:py-10 max-w-full">
+            <div className="mb-6">
+              {job && (
+                <div className="mb-4">
+                  <h1 className={`${textSizes.title} font-bold`}>Cover Letters for {job.job_title}</h1>
+                  <p className="text-muted-foreground">{job.company_name}</p>
+                </div>
+              )}
+              {!job && (
+                <h1 className={`${textSizes.title} font-bold mb-2`}>Cover Letters</h1>
+              )}
+            </div>
+
+        <Tabs id="cover-letter-tabs" value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 h-auto gap-0">
+            <TabsTrigger value="list" className={`h-full ${textSizes.body} font-semibold data-[state=active]:bg-transparent data-[state=active]:border-b-4 data-[state=active]:border-primary rounded-none data-[state=active]:shadow-none text-xs sm:text-sm px-1 sm:px-2`}>
               <span className="hidden sm:inline">My Cover Letters</span>
               <span className="sm:hidden">My Letters</span>
             </TabsTrigger>
-            <TabsTrigger value="archived" className={`h-full ${textSizes.body} font-semibold data-[state=active]:bg-transparent data-[state=active]:border-b-4 data-[state=active]:border-primary rounded-none data-[state=active]:shadow-none`}>
+            <TabsTrigger value="archived" className={`h-full ${textSizes.body} font-semibold data-[state=active]:bg-transparent data-[state=active]:border-b-4 data-[state=active]:border-primary rounded-none data-[state=active]:shadow-none text-xs sm:text-sm px-1 sm:px-2`}>
               Archived
             </TabsTrigger>
-            <TabsTrigger value="templates" className={`h-full ${textSizes.body} font-semibold data-[state=active]:bg-transparent data-[state=active]:border-b-4 data-[state=active]:border-primary rounded-none data-[state=active]:shadow-none`}>
+            <TabsTrigger value="templates" className={`h-full ${textSizes.body} font-semibold data-[state=active]:bg-transparent data-[state=active]:border-b-4 data-[state=active]:border-primary rounded-none data-[state=active]:shadow-none text-xs sm:text-sm px-1 sm:px-2`}>
               Templates
             </TabsTrigger>
-            <TabsTrigger value="performance" className={`h-full ${textSizes.body} font-semibold data-[state=active]:bg-transparent data-[state=active]:border-b-4 data-[state=active]:border-primary rounded-none data-[state=active]:shadow-none gap-2`}>
+            <TabsTrigger value="performance" className={`h-full ${textSizes.body} font-semibold data-[state=active]:bg-transparent data-[state=active]:border-b-4 data-[state=active]:border-primary rounded-none data-[state=active]:shadow-none gap-1 text-xs sm:text-sm px-1 sm:px-2`}>
               <BarChart3 className="h-4 w-4" />
               <span className="hidden sm:inline">Performance</span>
             </TabsTrigger>
@@ -408,7 +514,10 @@ export default function CoverLetters() {
                     <CardTitle className={textSizes.cardTitle}>Your Cover Letters</CardTitle>
                     <CardDescription>Manage all your saved cover letters</CardDescription>
                   </div>
-                  <Button onClick={() => setActiveTab('templates')}>
+                  <Button 
+                    onClick={() => setActiveTab('templates')}
+                    aria-label="Create new cover letter from templates"
+                  >
                     <Plus className="h-4 w-4 mr-2" />
                     New Cover Letter
                   </Button>
@@ -423,7 +532,10 @@ export default function CoverLetters() {
                   <div className="text-center py-12">
                     <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                     <p className="text-muted-foreground mb-4">No cover letters yet</p>
-                    <Button onClick={() => setActiveTab('templates')}>
+                    <Button 
+                      onClick={() => setActiveTab('templates')}
+                      aria-label="Create your first cover letter from templates"
+                    >
                       <Plus className="h-4 w-4 mr-2" />
                       Create Your First Cover Letter
                     </Button>
@@ -433,9 +545,9 @@ export default function CoverLetters() {
                     {coverLetters.map((letter) => (
                       <Card key={letter.id} className="overflow-hidden hover:shadow-lg hover:scale-[1.02] transition-all duration-200">
                         <CardHeader className="pb-3">
-                          <div className="flex items-start justify-between">
+                          <div className="flex flex-wrap items-start justify-between gap-2">
                             <div className="flex-1 min-w-0">
-                              <CardTitle className="text-base truncate">
+                              <CardTitle className="text-base break-words">
                                 {letter.version_name}
                               </CardTitle>
                               <CardDescription className="text-xs mt-1">
@@ -461,12 +573,13 @@ export default function CoverLetters() {
                           </p>
                           
                           <div className="flex flex-col gap-2">
-                            <div className="flex gap-2">
+                            <div className="flex flex-wrap gap-2">
                               <Button
                                 variant="default"
                                 size="sm"
                                 onClick={() => navigate(`/cover-letter/edit?letterId=${letter.id}`)}
-                                className="flex-1"
+                                className="flex-1 min-w-[80px]"
+                                aria-label={`Edit cover letter: ${letter.version_name}`}
                               >
                                 <Edit3 className="h-3 w-3 mr-1" />
                                 <span className="hidden sm:inline">Edit</span>
@@ -479,7 +592,8 @@ export default function CoverLetters() {
                                   setNewName(letter.version_name);
                                   setIsRenameDialogOpen(true);
                                 }}
-                                className="flex-1"
+                                className="flex-1 min-w-[80px]"
+                                aria-label={`Rename cover letter: ${letter.version_name}`}
                               >
                                 <Edit3 className="h-3 w-3 mr-1" />
                                 <span className="hidden sm:inline">Rename</span>
@@ -490,6 +604,7 @@ export default function CoverLetters() {
                               size="sm"
                               onClick={() => setTrackingCoverLetter({ id: letter.id })}
                               className="w-full"
+                              aria-label={`Track performance for cover letter: ${letter.version_name}`}
                             >
                               <BarChart3 className="h-3 w-3 mr-1" />
                               Track Performance
@@ -499,17 +614,19 @@ export default function CoverLetters() {
                               size="sm"
                               onClick={() => setSharingCoverLetter({ id: letter.id, name: letter.version_name })}
                               className="w-full"
+                              aria-label={`Share cover letter: ${letter.version_name}`}
                             >
                               <Share2 className="h-3 w-3 mr-1" />
                               Share
                             </Button>
-                            <div className="flex gap-2">
+                            <div className="flex flex-wrap gap-2">
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                   <Button
                                     variant="outline"
                                     size="sm"
-                                    className="flex-1"
+                                    className="flex-1 min-w-[80px]"
+                                    aria-label={`Export cover letter: ${letter.version_name}`}
                                   >
                                     <FileDown className="h-3 w-3 mr-1" />
                                     <span className="hidden sm:inline">Export</span>
@@ -530,6 +647,8 @@ export default function CoverLetters() {
                                 variant="outline"
                                 size="sm"
                                 onClick={() => handleArchive(letter.id)}
+                                className="flex-shrink-0"
+                                aria-label={`Archive cover letter: ${letter.version_name}`}
                               >
                                 <Archive className="h-3 w-3" />
                               </Button>
@@ -537,7 +656,8 @@ export default function CoverLetters() {
                                 variant="outline"
                                 size="sm"
                                 onClick={() => handleDelete(letter.id)}
-                                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                className="text-destructive hover:text-destructive hover:bg-destructive/10 flex-shrink-0"
+                                aria-label={`Delete cover letter: ${letter.version_name}`}
                               >
                                 <Trash2 className="h-3 w-3" />
                               </Button>
@@ -577,9 +697,9 @@ export default function CoverLetters() {
                     {archivedCoverLetters.map((letter) => (
                       <Card key={letter.id} className="overflow-hidden hover:shadow-lg hover:scale-[1.02] transition-all duration-200 opacity-75 hover:opacity-90">
                         <CardHeader className="pb-3">
-                          <div className="flex items-start justify-between">
+                          <div className="flex flex-wrap items-start justify-between gap-2">
                             <div className="flex-1 min-w-0">
-                              <CardTitle className="text-base truncate">
+                              <CardTitle className="text-base break-words">
                                 {letter.version_name}
                               </CardTitle>
                               <CardDescription className="text-xs mt-1">
@@ -612,13 +732,13 @@ export default function CoverLetters() {
                               <Archive className="h-3 w-3 mr-1" />
                               Restore
                             </Button>
-                            <div className="flex gap-2">
+                            <div className="flex flex-wrap gap-2">
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                   <Button
                                     variant="outline"
                                     size="sm"
-                                    className="flex-1"
+                                    className="flex-1 min-w-[80px]"
                                   >
                                     <FileDown className="h-3 w-3 mr-1" />
                                     <span className="hidden sm:inline">Export</span>
@@ -639,7 +759,8 @@ export default function CoverLetters() {
                                 variant="outline"
                                 size="sm"
                                 onClick={() => handleDelete(letter.id)}
-                                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                className="text-destructive hover:text-destructive hover:bg-destructive/10 flex-shrink-0"
+                                aria-label={`Delete archived cover letter: ${letter.version_name}`}
                               >
                                 <Trash2 className="h-3 w-3" />
                               </Button>
@@ -750,6 +871,8 @@ export default function CoverLetters() {
             onOpenChange={(open) => !open && setSharingCoverLetter(null)}
           />
         )}
+          </div>
+        </main>
       </div>
     </div>
   );

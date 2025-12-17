@@ -124,7 +124,7 @@ export function CreateGoalDialog({ open, onOpenChange, prefilledData }: CreateGo
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="goal_type">Goal Type</Label>
               <Select value={formData.goal_type} onValueChange={(value) => setFormData({ ...formData, goal_type: value })}>
@@ -155,7 +155,7 @@ export function CreateGoalDialog({ open, onOpenChange, prefilledData }: CreateGo
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="target_date">Target Date</Label>
               <Input

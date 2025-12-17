@@ -150,7 +150,7 @@ export default function SharedCoverLetter() {
                 <iframe
                   srcDoc={`
                     <!DOCTYPE html>
-                    <html>
+                    <html lang="en">
                       <head>
                         <style>
                           body {

@@ -1,8 +1,10 @@
 import { AppNav } from "@/components/layout/AppNav";
+import { PreparationSidebar } from "@/components/layout/PreparationSidebar";
+import { Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Briefcase, Calendar } from "lucide-react";
+import { Briefcase, Calendar, Target, Code2, Clock, Users, Brain, ChevronRight, BookOpen } from "lucide-react";
 import { MockInterviewSession } from "@/components/jobs/MockInterviewSession";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState } from "react";
@@ -31,15 +33,22 @@ export default function MockInterview() {
   const selectedJob = jobs?.find(job => job.id === selectedJobId) || jobs?.[0];
 
   return (
-    <div className="min-h-screen bg-background">
+    <>
       <AppNav />
-      <div className="container mx-auto p-4 space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold mb-2">Mock Interview Sessions</h1>
-          <p className="text-muted-foreground">
-            Practice interviews for your job applications
-          </p>
-        </div>
+      
+      <div className="flex min-h-screen bg-background pt-16">
+        <PreparationSidebar activeTab="mock-interview" />
+        
+        {/* Main Content */}
+        <main className="flex-1 overflow-x-hidden lg:ml-56">
+          <div className="h-full overflow-y-auto">
+            <div className="container mx-auto px-4 py-8 max-w-7xl lg:pt-0 pt-16">
+              <div className="mb-8">
+                <h1 className="text-3xl font-bold mb-2">Mock Interview Sessions</h1>
+                <p className="text-muted-foreground">
+                  Practice interviews for your job applications
+                </p>
+              </div>
 
         {jobs && jobs.length > 0 ? (
           <div className="space-y-6">
@@ -105,7 +114,10 @@ export default function MockInterview() {
             </CardContent>
           </Card>
         )}
+            </div>
+          </div>
+        </main>
       </div>
-    </div>
+    </>
   );
 }

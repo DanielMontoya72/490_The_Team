@@ -7,19 +7,20 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Save, Palette, Sparkles, Loader2, RefreshCw, LayoutList, Check, AlertCircle, Eye, MessageSquare, Edit2, Plus } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Save, Palette, Sparkles, Loader2, RefreshCw, LayoutList, Check, AlertCircle, Eye, MessageSquare, Edit2, Plus, Download, BookmarkCheck } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ResumeSectionCustomizer, ResumeSection } from "@/components/resume/ResumeSectionCustomizer";
+import { BasicTemplatePicker } from "@/components/resume/BasicTemplatePicker";
+import { ResumeTemplatesShowcase } from "@/components/resume/ResumeTemplatesShowcase";
 import SkillsOptimization from "@/components/resume/SkillsOptimization";
 import { ExperienceTailoring } from "@/components/resume/ExperienceTailoring";
 import { SavedTailoredVersions } from "@/components/resume/SavedTailoredVersions";
 import { ResumeExport } from "@/components/resume/ResumeExport";
 import { ResumeValidation } from "@/components/resume/ResumeValidation";
-import { ResumePreviewPanel } from "@/components/resume/ResumePreviewPanel";
+import SimpleResumeTemplate from "@/components/resume/SimpleResumeTemplate";
 import { ResumeFeedbackPanel } from "@/components/resume/ResumeFeedbackPanel";
 import { SkillGapAnalysisDialog } from "@/components/resume/SkillGapAnalysisDialog";
 
@@ -30,13 +31,15 @@ interface ResumeEditorProps {
 }
 
 export const ResumeEditor = ({ userId, resumeId, onSave }: ResumeEditorProps) => {
+    const [showTemplateDialog, setShowTemplateDialog] = useState(false);
   const { theme: currentTheme } = useTheme();
   const [resumeName, setResumeName] = useState("");
   const [isRenamingResume, setIsRenamingResume] = useState(false);
   const [newResumeName, setNewResumeName] = useState("");
-  const [template, setTemplate] = useState<any>(null);
   const [content, setContent] = useState<any>({});
-  const [customization, setCustomization] = useState<any>({});
+  // Only allow primary color and basic template style customization
+  const [primaryColor, setPrimaryColor] = useState<string>("#2563eb");
+  const [templateStyle, setTemplateStyle] = useState<string>("classic");
   const [loading, setLoading] = useState(false);
   const [jobs, setJobs] = useState<any[]>([]);
   const [selectedJobId, setSelectedJobId] = useState<string>("");
@@ -51,6 +54,9 @@ export const ResumeEditor = ({ userId, resumeId, onSave }: ResumeEditorProps) =>
   const [feedbackCount, setFeedbackCount] = useState<number>(0);
   const [autoRunAI, setAutoRunAI] = useState(false);
   const [showSkillGapDialog, setShowSkillGapDialog] = useState(false);
+  const [showExportDialog, setShowExportDialog] = useState(false);
+  const [manualJobDescription, setManualJobDescription] = useState("");
+  const [showTailoredVersionsDialog, setShowTailoredVersionsDialog] = useState(false);
 
   useEffect(() => {
     if (resumeId) {
@@ -218,8 +224,26 @@ export const ResumeEditor = ({ userId, resumeId, onSave }: ResumeEditorProps) =>
       setResumeName(data.resume_name);
       const resumeContent = data.content || {};
       setContent(resumeContent);
-      setCustomization(data.customization_overrides || {});
-      setTemplate(data.resume_templates);
+      // Handle both string and object for customization_overrides
+      let color = "#2563eb";
+      let style = "classic";
+      if (data.customization_overrides) {
+        if (typeof data.customization_overrides === 'string') {
+          try {
+            const parsed = JSON.parse(data.customization_overrides);
+            color = parsed.primaryColor || color;
+            style = parsed.templateStyle || style;
+          } catch {}
+        } else if (
+          typeof data.customization_overrides === 'object' &&
+          !Array.isArray(data.customization_overrides)
+        ) {
+          color = (data.customization_overrides as any).primaryColor || color;
+          style = (data.customization_overrides as any).templateStyle || style;
+        }
+      }
+      setPrimaryColor(color);
+      setTemplateStyle(style);
       // Type assertion for aiGenerated field
       setAiContent((resumeContent as any)?.aiGenerated || null);
       // Load AI variations if they exist
@@ -249,19 +273,16 @@ export const ResumeEditor = ({ userId, resumeId, onSave }: ResumeEditorProps) =>
   };
 
   const handleGenerateAIContent = async (regenerate: boolean = false) => {
-    if (!selectedJobId) {
-      toast.error("Please select a job posting");
+    const selectedJob = jobs.find(j => j.id === selectedJobId);
+    const jobDescription = selectedJob?.job_description || manualJobDescription;
+    
+    if (!jobDescription) {
+      toast.error("Please select a job posting or enter a job description");
       return;
     }
 
     if (!userProfile) {
       toast.error("User profile not loaded");
-      return;
-    }
-
-    const selectedJob = jobs.find(j => j.id === selectedJobId);
-    if (!selectedJob?.job_description) {
-      toast.error("Selected job has no description");
       return;
     }
 
@@ -274,9 +295,9 @@ export const ResumeEditor = ({ userId, resumeId, onSave }: ResumeEditorProps) =>
       
       const { data, error } = await supabase.functions.invoke("generate-resume-content", {
         body: {
-          jobDescription: selectedJob.job_description,
+          jobDescription: jobDescription,
           userProfile,
-          resumeType: template?.template_type || "chronological",
+          resumeType: "chronological",
           variationCount: 3,
         },
       });
@@ -309,7 +330,7 @@ export const ResumeEditor = ({ userId, resumeId, onSave }: ResumeEditorProps) =>
         aiGenerated: firstVariation,
         aiVariations: allVariations,
         selectedVariation: currentIndex,
-        tailoredFor: selectedJob.job_title,
+        tailoredFor: selectedJob?.job_title || "Manual Job Description",
       });
       
       toast.success(
@@ -431,7 +452,7 @@ export const ResumeEditor = ({ userId, resumeId, onSave }: ResumeEditorProps) =>
         .update({
           resume_name: resumeName,
           content: contentToSave,
-          customization_overrides: customization,
+          customization_overrides: { primaryColor, templateStyle },
         })
         .eq("id", resumeId);
 
@@ -458,11 +479,11 @@ export const ResumeEditor = ({ userId, resumeId, onSave }: ResumeEditorProps) =>
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-3 mb-2">
-            <h2 className="text-2xl font-bold truncate">{resumeName}</h2>
+    <div className="space-y-4 sm:space-y-6 overflow-visible px-2 sm:px-0">
+      <div className="relative z-40 w-full lg:max-w-[50%]">
+        <div className="flex flex-col sm:flex-row sm:items-start gap-3">
+          <h2 className="text-xl sm:text-2xl font-bold break-words flex-1 min-w-0">{resumeName}</h2>
+          <div className="flex items-center gap-2 flex-wrap">
             <Button 
               variant="ghost" 
               size="sm"
@@ -470,16 +491,20 @@ export const ResumeEditor = ({ userId, resumeId, onSave }: ResumeEditorProps) =>
                 setNewResumeName(resumeName);
                 setIsRenamingResume(true);
               }}
+              className="touch-manipulation"
             >
               <Edit2 className="h-4 w-4" />
             </Button>
+            <Button onClick={() => setShowExportDialog(true)} variant="outline" size="sm" className="touch-manipulation">
+              <Download className="h-4 w-4 mr-2" />
+              <span className="hidden sm:inline">Export</span>
+            </Button>
+            <Button onClick={handleSave} disabled={loading} size="sm" className="touch-manipulation">
+              <Save className="h-4 w-4 mr-2" />
+              <span className="hidden sm:inline">Save</span>
+            </Button>
           </div>
-          <p className="text-muted-foreground">Customize your resume content and styling</p>
         </div>
-        <Button onClick={handleSave} disabled={loading}>
-          <Save className="h-4 w-4 mr-2" />
-          Save Changes
-        </Button>
       </div>
 
       <Dialog open={isRenamingResume} onOpenChange={setIsRenamingResume}>
@@ -517,42 +542,11 @@ export const ResumeEditor = ({ userId, resumeId, onSave }: ResumeEditorProps) =>
         </DialogContent>
       </Dialog>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div>
-          <Tabs defaultValue="preview" className="w-full">
-            <TabsList className="w-full max-w-full flex flex-col gap-1 md:flex-row md:flex-wrap md:gap-2 md:max-w-none h-auto p-1">
-          <TabsTrigger value="preview" className="w-full justify-start md:w-auto md:justify-center">
-            <Eye className="h-4 w-4 mr-2" />
-            Preview
-          </TabsTrigger>
-          <TabsTrigger value="ai" className="w-full justify-start md:w-auto md:justify-center">
-            <Sparkles className="h-4 w-4 mr-2" />
-            AI Generate
-          </TabsTrigger>
-          <TabsTrigger value="sections" className="w-full justify-start md:w-auto md:justify-center">
-            <LayoutList className="h-4 w-4 mr-2" />
-            Sections
-          </TabsTrigger>
-          <TabsTrigger value="content" className="w-full justify-start md:w-auto md:justify-center">
-            Content
-          </TabsTrigger>
-          <TabsTrigger value="export" className="w-full justify-start md:w-auto md:justify-center">
-            Export
-          </TabsTrigger>
-          <TabsTrigger value="feedback" className="w-full justify-start md:w-auto md:justify-center">
-            <MessageSquare className="h-4 w-4 mr-2" />
-            Feedback
-            {feedbackCount > 0 && (
-              <Badge variant="secondary" className="ml-2">{feedbackCount}</Badge>
-            )}
-          </TabsTrigger>
-        </TabsList>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+        <div className="space-y-4 sm:space-y-6">
 
-        <TabsContent value="preview" className="space-y-4">
-          <ResumeValidation content={content} resumeName={resumeName} />
-        </TabsContent>
 
-        <TabsContent value="ai" className="space-y-4">
+          {/* AI Generation */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -583,44 +577,53 @@ export const ResumeEditor = ({ userId, resumeId, onSave }: ResumeEditorProps) =>
                 </p>
               </div>
 
-              <div className="flex gap-2">
+              {/* Job Description (Optional) */}
+              <div className="space-y-2">
+                <Label htmlFor="job-description" className="text-sm">Job Description (Optional)</Label>
+                <Textarea
+                  id="job-description"
+                  placeholder="Paste job description here if you didn't link a job..."
+                  value={manualJobDescription}
+                  onChange={(e) => setManualJobDescription(e.target.value)}
+                  rows={6}
+                  className="resize-none text-sm"
+                />
+                <p className="text-xs text-muted-foreground">
+                  This will be used for AI content generation if no job is selected above
+                </p>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Button
                   onClick={() => handleGenerateAIContent(false)}
-                  disabled={!selectedJobId || aiGenerating}
-                  className="flex-1"
+                  disabled={(!selectedJobId && !manualJobDescription) || aiGenerating}
+                  className="flex-1 w-full sm:min-w-[200px] touch-manipulation"
                   size="lg"
                 >
                   {aiGenerating ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Generating All Content...
+                      <span className="hidden sm:inline">Generating All Content...</span>
+                      <span className="sm:hidden">Generating...</span>
                     </>
                   ) : (
                     <>
                       <Sparkles className="h-4 w-4 mr-2" />
-                      Generate All AI Content
+                      <span className="hidden sm:inline">Generate All AI Content</span>
+                      <span className="sm:hidden">Generate AI</span>
                     </>
                   )}
                 </Button>
                 {aiContent && (
                   <Button
                     onClick={() => handleGenerateAIContent(true)}
-                    disabled={!selectedJobId || aiGenerating}
+                    disabled={(!selectedJobId && !manualJobDescription) || aiGenerating}
                     variant="outline"
                     size="lg"
+                    className="w-full sm:w-auto touch-manipulation"
                   >
                     <RefreshCw className="h-4 w-4 mr-2" />
                     Regenerate
-                  </Button>
-                )}
-                {selectedJobId && (
-                  <Button
-                    onClick={() => setShowSkillGapDialog(true)}
-                    variant="secondary"
-                    size="lg"
-                  >
-                    <AlertCircle className="h-4 w-4 mr-2" />
-                    Skill Gaps
                   </Button>
                 )}
               </div>
@@ -630,8 +633,8 @@ export const ResumeEditor = ({ userId, resumeId, onSave }: ResumeEditorProps) =>
                   <Separator className="my-4" />
 
                   {aiVariations.length > 1 && (
-                    <div className="flex items-center gap-2">
-                      <Label>Variation:</Label>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                      <Label className="text-sm">Variation:</Label>
                       <Select 
                         value={selectedVariation.toString()} 
                         onValueChange={(value) => {
@@ -646,10 +649,10 @@ export const ResumeEditor = ({ userId, resumeId, onSave }: ResumeEditorProps) =>
                           });
                         }}
                       >
-                        <SelectTrigger className="w-40">
+                        <SelectTrigger className="w-full sm:w-48">
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="max-h-[300px]">
                           {aiVariations.map((_, idx) => (
                             <SelectItem key={idx} value={idx.toString()}>
                               Version {idx + 1}
@@ -657,24 +660,24 @@ export const ResumeEditor = ({ userId, resumeId, onSave }: ResumeEditorProps) =>
                           ))}
                         </SelectContent>
                       </Select>
-                      <Badge variant="secondary">{aiVariations.length} variations</Badge>
+                      <Badge variant="secondary" className="whitespace-nowrap">{aiVariations.length} variations</Badge>
                     </div>
                   )}
                   
-                  <div className="rounded-lg border bg-card p-4">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="font-semibold">Generated Content</h3>
-                      <Badge>Variation {selectedVariation + 1}</Badge>
+                  <div className="rounded-lg border bg-card p-3 sm:p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+                      <h3 className="font-semibold text-sm sm:text-base">Generated Content</h3>
+                      <Badge className="whitespace-nowrap">Variation {selectedVariation + 1}</Badge>
                     </div>
                     
                     <div className="space-y-4">
                     <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <Label>Professional Summary</Label>
+                      <div className="flex items-center justify-between mb-2 gap-2">
+                        <Label className="text-sm">Professional Summary</Label>
                         <Button
                           size="sm"
                           onClick={() => applyAISuggestion("summary", aiContent.professionalSummary)}
-                          className="bg-purple-600 hover:bg-purple-700 text-white"
+                          className="bg-purple-600 hover:bg-purple-700 text-white touch-manipulation flex-shrink-0"
                         >
                           Apply
                         </Button>
@@ -742,50 +745,21 @@ export const ResumeEditor = ({ userId, resumeId, onSave }: ResumeEditorProps) =>
             </CardContent>
           </Card>
 
-          <SkillsOptimization
-            jobDescription={jobs.find(j => j.id === selectedJobId)?.job_description || ''}
-            userSkills={userProfile?.skills || []}
-            resumeId={resumeId}
-            autoOptimize={autoRunAI}
-            onAddSkills={(skills) => {
-              const currentSkills = Array.isArray(content.skills) ? content.skills : [];
-              
-              // If we're receiving the same number or more skills, it's likely a reorder operation
-              // Otherwise, it's adding new skills
-              if (skills.length >= currentSkills.length && skills.every(s => currentSkills.includes(s))) {
-                // This is a reorder - replace the entire array
-                setContent({ ...content, skills: skills });
-              } else {
-                // This is adding new skills - filter out duplicates
-                const newSkills = skills.filter(s => !currentSkills.includes(s));
-                if (newSkills.length > 0) {
-                  setContent({ ...content, skills: [...currentSkills, ...newSkills] });
-                }
-              }
-            }}
+          {/* Template Style Picker (moved below AI content) */}
+          <div className="mb-6">
+            <BasicTemplatePicker selected={templateStyle} onSelect={setTemplateStyle} />
+          </div>
+
+          {/* Validation */}
+          <ResumeValidation 
+            content={content} 
+            resumeName={resumeName}
+            onShowSkillGap={() => setShowSkillGapDialog(true)}
+            onShowTailoredVersions={() => setShowTailoredVersionsDialog(true)}
+            hasJobSelected={!!(selectedJobId || manualJobDescription)}
           />
 
-          <ExperienceTailoring
-            userId={userId}
-            jobDescription={jobs.find(j => j.id === selectedJobId)?.job_description || ''}
-            jobId={selectedJobId}
-            autoTailor={autoRunAI}
-            onVersionSaved={() => {
-              // Refresh saved versions when a new version is saved
-              if (savedVersionsRefreshFn) {
-                savedVersionsRefreshFn();
-              }
-            }}
-          />
-          
-          <SavedTailoredVersions 
-            userId={userId}
-            resumeId={resumeId}
-            onRefresh={(refreshFn) => setSavedVersionsRefreshFn(() => refreshFn)}
-          />
-        </TabsContent>
-
-        <TabsContent value="sections" className="space-y-4">
+          {/* Section Customizer */}
           <ResumeSectionCustomizer
             sections={sections}
             onSectionsChange={async (newSections) => {
@@ -812,55 +786,8 @@ export const ResumeEditor = ({ userId, resumeId, onSave }: ResumeEditorProps) =>
             jobType={selectedJobId ? jobs.find(j => j.id === selectedJobId)?.job_title : undefined}
             userId={userId}
           />
-          
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm">Section Preview</CardTitle>
-              <CardDescription className="text-xs">
-                This shows which sections will appear on your resume in the current order
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {sections
-                  .filter(s => s.enabled)
-                  .sort((a, b) => a.order - b.order)
-                  .map((section, index) => (
-                    <div
-                      key={section.id}
-                      className="flex items-center gap-3 p-3 border rounded-lg bg-card"
-                    >
-                      <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-medium">
-                        {index + 1}
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-medium text-sm">{section.name}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {section.formatting?.fontSize || "medium"} font · {section.formatting?.spacing || "normal"} spacing
-                        </p>
-                      </div>
-                      {section.isComplete ? (
-                        <Badge variant="secondary" className="text-xs">
-                          <Check className="h-3 w-3 mr-1" /> Ready
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline" className="text-xs">
-                          <AlertCircle className="h-3 w-3 mr-1" /> Add data
-                        </Badge>
-                      )}
-                    </div>
-                  ))}
-              </div>
-              {sections.filter(s => s.enabled).length === 0 && (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  No sections enabled. Enable at least one section above.
-                </p>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
 
-        <TabsContent value="content" className="space-y-4">
+          {/* Resume Information */}
           <Card>
             <CardHeader>
               <CardTitle>Resume Information</CardTitle>
@@ -894,42 +821,19 @@ export const ResumeEditor = ({ userId, resumeId, onSave }: ResumeEditorProps) =>
                 </p>
               </div>
 
-              <div className="rounded-lg border bg-muted/30 p-4 space-y-3 mt-2">
-                <p className="text-sm font-medium">Template Information</p>
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">
-                    Template: <span className="font-medium text-foreground">{template?.template_name}</span> ({template?.template_type})
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Your profile data from the Profile section will be automatically included in the resume.
-                  </p>
-                </div>
-              </div>
+
             </CardContent>
           </Card>
-        </TabsContent>
 
-        <TabsContent value="export" className="space-y-4">
-          {resumeId && (
-            <ResumeExport
-              resumeId={resumeId}
-              resumeName={resumeName}
-              resumeData={{
-                content,
-                customization_overrides: customization,
-                userProfile
-              }}
-              sections={sections}
-            />
-          )}
-        </TabsContent>
-
-        <TabsContent value="feedback" className="space-y-4">
+          {/* Resume Feedback */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <MessageSquare className="h-5 w-5 text-primary" />
                 Resume Feedback
+                {feedbackCount > 0 && (
+                  <Badge variant="secondary" className="ml-2">{feedbackCount}</Badge>
+                )}
               </CardTitle>
               <CardDescription>
                 View and manage feedback on your resume. Share your resume to receive feedback from others.
@@ -953,15 +857,96 @@ export const ResumeEditor = ({ userId, resumeId, onSave }: ResumeEditorProps) =>
               )}
             </CardContent>
           </Card>
-        </TabsContent>
-        </Tabs>
         </div>
         
-        {/* Live Preview - Always Visible */}
-        <div className="space-y-4 sticky top-4 h-fit">
-          <ResumePreviewPanel content={content} customization={customization} template={template} sections={sections} />
+        {/* Live Preview - Scrollable */}
+        <div className="hidden lg:block relative">
+          <div className="fixed top-20 bottom-4 w-[calc(50%-2rem)] max-w-[700px] z-30 overflow-y-auto overflow-x-hidden">
+            <div style={{ transform: 'scale(0.7)', transformOrigin: 'top left', width: '794px' }}>
+              <SimpleResumeTemplate
+                data={{
+                  personalInfo: {
+                    name: `${content.profile?.first_name || ''} ${content.profile?.last_name || ''}`.trim(),
+                    email: content.profile?.email || '',
+                    phone: content.profile?.phone || '',
+                    location: content.profile?.location || '',
+                    headline: content.profile?.headline || '',
+                    linkedin: content.profile?.linkedin || ''
+                  },
+                  summary: content.summary || '',
+                  skills: Array.isArray(content.skills)
+                    ? content.skills.map((s: any) => typeof s === 'string' ? s : s.skill_name || '')
+                    : [],
+                  experience: (content.employment || []).map((exp: any) => ({
+                    jobTitle: exp.job_title || '',
+                    company: exp.company_name || '',
+                    dates: exp.start_date ? `${new Date(exp.start_date).toLocaleDateString()} - ${exp.is_current ? 'Present' : new Date(exp.end_date).toLocaleDateString()}` : '',
+                    description: exp.job_description || '',
+                    location: exp.location || ''
+                  })),
+                  education: (content.education || []).map((edu: any) => ({
+                    degree: `${edu.degree_type || ''} in ${edu.field_of_study || ''}`,
+                    institution: edu.institution_name || '',
+                    year: edu.graduation_date ? new Date(edu.graduation_date).getFullYear() : 'Present',
+                    gpa: edu.show_gpa && edu.gpa ? edu.gpa : null
+                  })),
+                  additional: content.additional || ''
+                }}
+                primaryColor={primaryColor}
+                templateStyle={templateStyle}
+              />
+            </div>
+          </div>
         </div>
       </div>
+
+      {/* Tailored Versions Dialog */}
+      <Dialog open={showTailoredVersionsDialog} onOpenChange={setShowTailoredVersionsDialog}>
+        <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Saved Tailored Versions</DialogTitle>
+            <DialogDescription>
+              View and apply your saved tailored experience versions
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <SavedTailoredVersions 
+              userId={userId}
+              resumeId={resumeId}
+              onRefresh={(refreshFn) => setSavedVersionsRefreshFn(() => refreshFn)}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Export Dialog */}
+      <Dialog open={showExportDialog} onOpenChange={setShowExportDialog}>
+        <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Export Resume</DialogTitle>
+            <DialogDescription>
+              Download your resume in various formats or share it with others
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            {resumeId && (
+              <ResumeExport
+                resumeId={resumeId}
+                resumeName={resumeName}
+                resumeData={{
+                  content,
+                  customization_overrides: {
+                    primaryColor,
+                    templateStyle
+                  },
+                  userProfile
+                }}
+                sections={sections}
+              />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Skill Gap Analysis Dialog */}
       {selectedJobId && (

@@ -226,14 +226,14 @@ export const InterviewQuestionBank = ({ jobId, interviewId }: InterviewQuestionB
         </Card>
       ) : (
         <Tabs defaultValue="behavioral" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="behavioral">
+          <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3">
+            <TabsTrigger value="behavioral" className="text-xs sm:text-sm px-1 sm:px-2">
               Behavioral ({categorizedQuestions.behavioral.length})
             </TabsTrigger>
-            <TabsTrigger value="technical">
+            <TabsTrigger value="technical" className="text-xs sm:text-sm px-1 sm:px-2">
               Technical ({categorizedQuestions.technical.length})
             </TabsTrigger>
-            <TabsTrigger value="situational">
+            <TabsTrigger value="situational" className="text-xs sm:text-sm px-1 sm:px-2">
               Situational ({categorizedQuestions.situational.length})
             </TabsTrigger>
           </TabsList>

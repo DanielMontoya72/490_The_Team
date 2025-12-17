@@ -669,6 +669,33 @@ export type Database = {
         }
         Relationships: []
       }
+      app_cache: {
+        Row: {
+          cache_key: string
+          created_at: string
+          expires_at: string
+          id: string
+          updated_at: string
+          value: Json
+        }
+        Insert: {
+          cache_key: string
+          created_at?: string
+          expires_at: string
+          id?: string
+          updated_at?: string
+          value: Json
+        }
+        Update: {
+          cache_key?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          updated_at?: string
+          value?: Json
+        }
+        Relationships: []
+      }
       application_automation_rules: {
         Row: {
           actions: Json
@@ -3235,6 +3262,7 @@ export type Database = {
       }
       gmail_integrations: {
         Row: {
+          auto_import_enabled: boolean | null
           created_at: string | null
           gmail_access_token: string | null
           gmail_email: string | null
@@ -3248,6 +3276,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          auto_import_enabled?: boolean | null
           created_at?: string | null
           gmail_access_token?: string | null
           gmail_email?: string | null
@@ -3261,6 +3290,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          auto_import_enabled?: boolean | null
           created_at?: string | null
           gmail_access_token?: string | null
           gmail_email?: string | null

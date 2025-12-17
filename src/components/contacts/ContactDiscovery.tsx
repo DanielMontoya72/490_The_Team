@@ -399,45 +399,57 @@ export function ContactDiscovery() {
         </CardContent>
       </Card>
 
-      <Tabs defaultValue="all" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="all">Suggested ({filteredSuggestions('suggested').length})</TabsTrigger>
-          <TabsTrigger value="contacted">Contacted ({filteredSuggestions('contacted').length})</TabsTrigger>
-          <TabsTrigger value="connected">Connected ({filteredSuggestions('connected').length})</TabsTrigger>
+      <Tabs defaultValue="all" className="w-full max-w-full overflow-hidden">
+        <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 gap-1 h-auto p-1">
+          <TabsTrigger value="all" className="text-xs sm:text-sm px-2 py-2 data-[state=active]:bg-background">
+            <span className="hidden sm:inline">Suggested ({filteredSuggestions('suggested').length})</span>
+            <span className="sm:hidden">All ({filteredSuggestions('suggested').length})</span>
+          </TabsTrigger>
+          <TabsTrigger value="contacted" className="text-xs sm:text-sm px-2 py-2 data-[state=active]:bg-background">
+            <span className="hidden sm:inline">Contacted ({filteredSuggestions('contacted').length})</span>
+            <span className="sm:hidden">Contacted ({filteredSuggestions('contacted').length})</span>
+          </TabsTrigger>
+          <TabsTrigger value="connected" className="text-xs sm:text-sm px-2 py-2 data-[state=active]:bg-background">
+            <span className="hidden sm:inline">Connected ({filteredSuggestions('connected').length})</span>
+            <span className="sm:hidden">Connected ({filteredSuggestions('connected').length})</span>
+          </TabsTrigger>
         </TabsList>
 
         {['all', 'contacted', 'connected'].map(tab => <TabsContent key={tab} value={tab}>
-            <ScrollArea className="h-[600px]">
-              <div className="space-y-4">
+            <ScrollArea className="h-[400px] sm:h-[600px]">
+              <div className="space-y-3 sm:space-y-4 w-full max-w-full overflow-hidden">
                 {loadingSuggestions ? <div className="flex items-center justify-center p-8">
                     <Loader2 className="h-8 w-8 animate-spin" />
-                  </div> : filteredSuggestions(tab === 'all' ? 'suggested' : tab).length === 0 ? <Card>
-                    <CardContent className="flex flex-col items-center justify-center p-8">
-                      <Users className="h-12 w-12 text-muted-foreground mb-4" />
-                      <p className="text-muted-foreground">No contacts found in this category</p>
+                  </div> : filteredSuggestions(tab === 'all' ? 'suggested' : tab).length === 0 ? <Card className="w-full max-w-full">
+                    <CardContent className="flex flex-col items-center justify-center p-6 sm:p-8">
+                      <Users className="h-8 w-8 sm:h-12 sm:w-12 text-muted-foreground mb-4" />
+                      <p className="text-sm sm:text-base text-muted-foreground text-center">No contacts found in this category</p>
                     </CardContent>
-                  </Card> : filteredSuggestions(tab === 'all' ? 'suggested' : tab).map(contact => <Card key={contact.id}>
-                      <CardHeader>
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <CardTitle className="text-lg">{contact.contact_name}</CardTitle>
-                              <Badge variant="outline" className="flex items-center gap-1">
-                                {getConnectionTypeIcon(contact.connection_type)}
-                                {contact.connection_type.replace('_', ' ')}
-                              </Badge>
-                              {tab === 'all' && isAlreadySaved(contact) && (
-                                <Badge variant="secondary">Already Saved</Badge>
-                              )}
+                  </Card> : filteredSuggestions(tab === 'all' ? 'suggested' : tab).map(contact => <Card key={contact.id} className="w-full max-w-full overflow-hidden">
+                      <CardHeader className="pb-3 sm:pb-4">
+                        <div className="flex flex-col sm:flex-row items-start justify-between gap-3 sm:gap-4">
+                          <div className="flex-1 min-w-0 w-full">
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 mb-2">
+                              <CardTitle className="text-base sm:text-lg break-words">{contact.contact_name}</CardTitle>
+                              <div className="flex flex-wrap gap-1">
+                                <Badge variant="outline" className="flex items-center gap-1 text-xs">
+                                  {getConnectionTypeIcon(contact.connection_type)}
+                                  <span className="hidden sm:inline">{contact.connection_type.replace('_', ' ')}</span>
+                                  <span className="sm:hidden">{contact.connection_type.split('_')[0]}</span>
+                                </Badge>
+                                {tab === 'all' && isAlreadySaved(contact) && (
+                                  <Badge variant="secondary" className="text-xs">Saved</Badge>
+                                )}
+                              </div>
                             </div>
-                            <CardDescription>
+                            <CardDescription className="break-words">
                               {contact.contact_title} {contact.contact_company && `at ${contact.contact_company}`}
                             </CardDescription>
-                            {contact.contact_location && <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
-                                <MapPin className="h-3 w-3" />
-                                {contact.contact_location}
+                            {contact.contact_location && <p className="text-xs sm:text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                                <MapPin className="h-3 w-3 flex-shrink-0" />
+                                <span className="truncate">{contact.contact_location}</span>
                               </p>}
-                            {contact.birthday && <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                            {contact.birthday && <p className="text-xs sm:text-sm text-muted-foreground flex items-center gap-1 mt-1">
                                 🎂 Birthday: {new Date(contact.birthday).toLocaleDateString('en-US', {
                         month: '2-digit',
                         day: '2-digit',
@@ -445,101 +457,101 @@ export function ContactDiscovery() {
                       })}
                               </p>}
                           </div>
-                          <div className="flex flex-col items-end gap-2">
-                            <Badge variant={contact.relevance_score >= 80 ? 'default' : contact.relevance_score >= 60 ? 'secondary' : 'outline'}>
+                          <div className="flex flex-row sm:flex-col items-center sm:items-end gap-2 w-full sm:w-auto">
+                            <Badge variant={contact.relevance_score >= 80 ? 'default' : contact.relevance_score >= 60 ? 'secondary' : 'outline'} className="text-xs">
                               {contact.relevance_score}% Match
                             </Badge>
-                            <Progress value={contact.relevance_score} className="w-20" />
+                            <Progress value={contact.relevance_score} className="w-16 sm:w-20" />
                           </div>
                         </div>
                       </CardHeader>
-                      <CardContent className="space-y-4">
+                      <CardContent className="space-y-3 sm:space-y-4 w-full overflow-hidden">
                         <div>
-                          <p className="text-sm font-medium mb-2">Why Connect:</p>
-                          <p className="text-sm text-muted-foreground">{contact.suggestion_reason}</p>
+                          <p className="text-xs sm:text-sm font-medium mb-2">Why Connect:</p>
+                          <p className="text-xs sm:text-sm text-muted-foreground break-words">{contact.suggestion_reason}</p>
                         </div>
 
                         {Array.isArray(contact.connection_path) && contact.connection_path.length > 0 && <div>
-                            <p className="text-sm font-medium mb-2">Connection Path:</p>
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                              <span>You</span>
-                              {(contact.connection_path as string[]).map((conn: string, idx: number) => <span key={idx} className="flex items-center gap-2">
-                                  <span>→</span>
-                                  <span>{conn}</span>
-                                </span>)}
-                              <span>→</span>
-                              <span className="font-medium">{contact.contact_name}</span>
+                            <p className="text-xs sm:text-sm font-medium mb-2">Connection Path:</p>
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-1 sm:gap-2 text-xs sm:text-sm text-muted-foreground overflow-x-auto">
+                              <span className="flex-shrink-0">You</span>
+                              {(contact.connection_path as string[]).map((conn: string, idx: number) => <div key={idx} className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+                                  <span className="text-muted-foreground">→</span>
+                                  <span className="break-words">{conn}</span>
+                                </div>)}
+                              <span className="text-muted-foreground flex-shrink-0">→</span>
+                              <span className="font-medium break-words">{contact.contact_name}</span>
                             </div>
                           </div>}
 
                         {Array.isArray(contact.mutual_interests) && contact.mutual_interests.length > 0 && <div>
-                            <p className="text-sm font-medium mb-2">Mutual Interests:</p>
-                            <div className="flex flex-wrap gap-2">
-                              {contact.mutual_interests.map((interest: string, idx: number) => <Badge key={idx} variant="secondary">{interest}</Badge>)}
+                            <p className="text-xs sm:text-sm font-medium mb-2">Mutual Interests:</p>
+                            <div className="flex flex-wrap gap-1 sm:gap-2">
+                              {contact.mutual_interests.map((interest: string, idx: number) => <Badge key={idx} variant="secondary" className="text-xs">{interest}</Badge>)}
                             </div>
                           </div>}
 
                         {contact.diversity_inclusion_tags && contact.diversity_inclusion_tags.length > 0 && <div>
-                            <p className="text-sm font-medium mb-2">Diversity & Inclusion:</p>
-                            <div className="flex flex-wrap gap-2">
-                              {contact.diversity_inclusion_tags.map((tag: string, idx: number) => <Badge key={idx} variant="outline">{tag}</Badge>)}
+                            <p className="text-xs sm:text-sm font-medium mb-2">Diversity & Inclusion:</p>
+                            <div className="flex flex-wrap gap-1 sm:gap-2">
+                              {contact.diversity_inclusion_tags.map((tag: string, idx: number) => <Badge key={idx} variant="outline" className="text-xs">{tag}</Badge>)}
                             </div>
                           </div>}
 
-                        <div className="flex gap-2 pt-2">
+                        <div className="flex flex-col sm:flex-row gap-2 pt-2 w-full">
                           {contact.status === 'suggested' && <>
-                              <Button size="sm" onClick={() => handleContactClick(contact)}>
-                                <Mail className="h-4 w-4 mr-2" />
-                                Send Message
+                              <Button size="sm" onClick={() => handleContactClick(contact)} className="w-full sm:w-auto">
+                                <Mail className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                                <span className="text-xs sm:text-sm">Send Message</span>
                               </Button>
                               <Button variant="outline" size="sm" onClick={() => updateContactStatus.mutate({
                       id: contact.id,
                       status: 'connected',
                       field: 'connected',
                       contactData: contact
-                    })}>
-                                Mark as Connected
+                    })} className="w-full sm:w-auto">
+                                <span className="text-xs sm:text-sm">Mark Connected</span>
                               </Button>
                               <Button variant="outline" size="sm" onClick={() => updateContactStatus.mutate({
                       id: contact.id,
                       status: 'dismissed'
-                    })}>
-                                Dismiss
+                    })} className="w-full sm:w-auto">
+                                <span className="text-xs sm:text-sm">Dismiss</span>
                               </Button>
                             </>}
                           {contact.status === 'contacted' && <>
-                              <Button size="sm" onClick={() => handleContactClick(contact)}>
-                                <Mail className="h-4 w-4 mr-2" />
-                                Send Follow-up
+                              <Button size="sm" onClick={() => handleContactClick(contact)} className="w-full sm:w-auto">
+                                <Mail className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                                <span className="text-xs sm:text-sm">Follow-up</span>
                               </Button>
-                              <Button variant="default" size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => updateContactStatus.mutate({
+                              <Button variant="default" size="sm" className="bg-green-600 hover:bg-green-700 w-full sm:w-auto" onClick={() => updateContactStatus.mutate({
                       id: contact.id,
                       status: 'connected',
                       field: 'connected',
                       contactData: contact
                     })}>
-                                <Network className="h-4 w-4 mr-2" />
-                                Mark as Connected
+                                <Network className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                                <span className="text-xs sm:text-sm">Connected</span>
                               </Button>
                               <Button variant="destructive" size="sm" onClick={() => updateContactStatus.mutate({
                       id: contact.id,
                       status: 'dismissed'
-                    })}>
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Delete
+                    })} className="w-full sm:w-auto">
+                                <Trash2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                                <span className="text-xs sm:text-sm">Delete</span>
                               </Button>
                             </>}
                           {contact.status === 'connected' && <>
-                              <Button size="sm" onClick={() => handleContactClick(contact)}>
-                                <Mail className="h-4 w-4 mr-2" />
-                                Send Message
+                              <Button size="sm" onClick={() => handleContactClick(contact)} className="w-full sm:w-auto">
+                                <Mail className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                                <span className="text-xs sm:text-sm">Message</span>
                               </Button>
                               <Button variant="destructive" size="sm" onClick={() => updateContactStatus.mutate({
                       id: contact.id,
                       status: 'dismissed'
-                    })}>
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Dismiss
+                    })} className="w-full sm:w-auto">
+                                <Trash2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                                <span className="text-xs sm:text-sm">Dismiss</span>
                               </Button>
                             </>}
                         </div>

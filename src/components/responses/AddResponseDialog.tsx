@@ -122,7 +122,7 @@ export function AddResponseDialog({ open, onOpenChange }: AddResponseDialogProps
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Skills (comma-separated)</Label>
               <Input
@@ -142,7 +142,7 @@ export function AddResponseDialog({ open, onOpenChange }: AddResponseDialogProps
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Companies Used For</Label>
               <Input

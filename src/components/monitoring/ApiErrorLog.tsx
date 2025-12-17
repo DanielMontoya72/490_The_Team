@@ -174,7 +174,7 @@ export function ApiErrorLog() {
 
         {/* Error Statistics */}
         {errors.length > 0 && (
-          <div className="mt-4 pt-4 border-t grid grid-cols-3 gap-4 text-sm">
+          <div className="mt-4 pt-4 border-t grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
             <div>
               <p className="text-muted-foreground">Total Errors</p>
               <p className="font-bold text-destructive">{errors.length}</p>

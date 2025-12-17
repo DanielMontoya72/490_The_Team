@@ -31,14 +31,16 @@ const handler = async (req: Request): Promise<Response> => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Check if user exists
+    // Get user_id from user_profiles table
+    // Note: user_profiles.user_id has a foreign key constraint to auth.users(id),
+    // so if a profile exists, the user must exist in auth.users
     const { data: profiles, error: profileError } = await supabase
       .from('user_profiles')
       .select('user_id')
       .eq('email', email)
       .single();
 
-    if (profileError || !profiles) {
+    if (profileError || !profiles || !profiles.user_id) {
       console.log('User not found for email:', email);
       // Return success anyway for security (don't reveal if email exists)
       return new Response(
@@ -46,6 +48,8 @@ const handler = async (req: Request): Promise<Response> => {
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    const userId = profiles.user_id;
 
     // Generate reset token
     const token = crypto.randomUUID();
@@ -55,7 +59,7 @@ const handler = async (req: Request): Promise<Response> => {
     const { error: tokenError } = await supabase
       .from('password_reset_tokens')
       .insert({
-        user_id: profiles.user_id,
+        user_id: userId,
         token,
         expires_at: expiresAt.toISOString(),
       });

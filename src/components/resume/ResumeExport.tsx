@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import { RESUME_TEMPLATES } from '@/data/seedData';
 import { useTheme } from 'next-themes';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -12,6 +13,8 @@ import { Download, FileText, FileType, Code, Printer, Loader2 } from 'lucide-rea
 import { toast } from 'sonner';
 import html2pdf from 'html2pdf.js';
 import { ResumeSection } from '@/components/resume/ResumeSectionCustomizer';
+import SimpleResumeTemplate from '@/components/resume/SimpleResumeTemplate';
+import { escapeText } from '@/lib/sanitize';
 
 interface ResumeExportProps {
   resumeId: string;
@@ -21,12 +24,25 @@ interface ResumeExportProps {
 }
 
 export function ResumeExport({ resumeId, resumeName, resumeData, sections }: ResumeExportProps) {
+  // Ref for the preview panel to export
+  const previewRef = useRef<HTMLDivElement>(null);
   const { theme: currentTheme } = useTheme();
   const [exportFormat, setExportFormat] = useState<'pdf' | 'docx' | 'html' | 'txt'>('pdf');
-  const [theme, setTheme] = useState<'classic' | 'modern' | 'minimal' | 'creative'>('modern');
   const [filename, setFilename] = useState(resumeName.replace(/\s+/g, '_'));
   const [includeWatermark, setIncludeWatermark] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  // Only allow primary color customization
+  const [primaryColor, setPrimaryColor] = useState(resumeData?.customization_overrides?.primaryColor || '#2563eb');
+
+  // Template style and name
+  const templateStyle = resumeData?.customization_overrides?.templateStyle || 'classic';
+  const templateObj = RESUME_TEMPLATES.find(t => t.style === templateStyle);
+  const templateName = templateObj ? templateObj.name : 'Classic';
+
+  // Layout, font family, and font size customization
+  const [layout, setLayout] = useState(resumeData?.customization_overrides?.layout || 'single-column');
+  const [fontFamily, setFontFamily] = useState(resumeData?.customization_overrides?.fontFamily || 'Arial');
+  const [fontSize, setFontSize] = useState(resumeData?.customization_overrides?.fontSize || '14px');
 
   // Get enabled sections sorted by order
   const enabledSections = sections
@@ -41,7 +57,6 @@ export function ResumeExport({ resumeId, resumeName, resumeData, sections }: Res
 
   const formatResumeData = () => {
     const { content, customization_overrides } = resumeData;
-    
     return {
       personalInfo: {
         name: `${resumeData.userProfile?.first_name || ''} ${resumeData.userProfile?.last_name || ''}`.trim(),
@@ -64,7 +79,9 @@ export function ResumeExport({ resumeId, resumeName, resumeData, sections }: Res
         year: edu.graduation_date ? new Date(edu.graduation_date).getFullYear() : 'Present',
         gpa: edu.show_gpa && edu.gpa ? edu.gpa : null
       })) || [],
-      skills: resumeData.userProfile?.skills?.map((s: any) => s.skill_name) || [],
+      skills: Array.isArray(resumeData.userProfile?.skills)
+        ? resumeData.userProfile.skills.map((s: any) => typeof s === 'string' ? s : s.skill_name || '')
+        : [],
       certifications: resumeData.userProfile?.certifications?.map((cert: any) => ({
         name: cert.certification_name,
         issuer: cert.issuing_organization,
@@ -77,318 +94,6 @@ export function ResumeExport({ resumeId, resumeName, resumeData, sections }: Res
         url: proj.project_url || ''
       })) || []
     };
-  };
-
-  const generateHTMLContent = (data: any): string => {
-    // Use colorblind-friendly colors when colorblind theme is active
-    const colors = currentTheme === 'colorblind' ? {
-      classic: { primary: '#000000', secondary: '#FF5800', accent: '#1E90FF' },
-      modern: { primary: '#FF5800', secondary: '#1E90FF', accent: '#000000' },
-      minimal: { primary: '#000000', secondary: '#FF5800', accent: '#1E90FF' },
-      creative: { primary: '#1E90FF', secondary: '#FF5800', accent: '#000000' }
-    } : {
-      classic: { primary: '#000000', secondary: '#333333', accent: '#666666' },
-      modern: { primary: '#2563eb', secondary: '#1e40af', accent: '#3b82f6' },
-      minimal: { primary: '#1f2937', secondary: '#374151', accent: '#6b7280' },
-      creative: { primary: '#7c3aed', secondary: '#6d28d9', accent: '#8b5cf6' }
-    };
-
-    const themeColors = colors[theme];
-
-    return `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${data.personalInfo.name} - Resume</title>
-  <style>
-    @media print {
-      body { margin: 0; padding: 0; }
-      .no-print { display: none; }
-    }
-    
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      line-height: 1.6;
-      color: #333;
-      max-width: 850px;
-      margin: 0 auto;
-      padding: 40px 20px;
-      background: white;
-    }
-    
-    .header {
-      text-align: center;
-      padding-bottom: 20px;
-      border-bottom: 3px solid ${themeColors.primary};
-      margin-bottom: 30px;
-    }
-    
-    .header h1 {
-      color: ${themeColors.primary};
-      font-size: 36px;
-      font-weight: 700;
-      margin-bottom: 8px;
-    }
-    
-    .header .headline {
-      color: ${themeColors.secondary};
-      font-size: 18px;
-      font-weight: 500;
-      margin-bottom: 12px;
-    }
-    
-    .contact-info {
-      display: flex;
-      justify-content: center;
-      gap: 20px;
-      flex-wrap: wrap;
-      font-size: 14px;
-      color: #666;
-    }
-    
-    .section {
-      margin-bottom: 30px;
-    }
-    
-    .section-title {
-      color: ${themeColors.primary};
-      font-size: 22px;
-      font-weight: 700;
-      margin-bottom: 15px;
-      padding-bottom: 8px;
-      border-bottom: 2px solid ${themeColors.accent};
-    }
-    
-    .section-content {
-      padding-left: 10px;
-    }
-    
-    .experience-item, .education-item, .project-item, .certification-item {
-      margin-bottom: 20px;
-    }
-    
-    .item-title {
-      font-size: 18px;
-      font-weight: 600;
-      color: ${themeColors.secondary};
-      margin-bottom: 4px;
-    }
-    
-    .item-subtitle {
-      font-size: 14px;
-      color: #666;
-      margin-bottom: 8px;
-    }
-    
-    .item-description {
-      font-size: 14px;
-      line-height: 1.6;
-      color: #444;
-      white-space: pre-wrap;
-    }
-    
-    .skills-container {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-    
-    .skill-badge {
-      background: ${themeColors.accent};
-      color: white;
-      padding: 6px 14px;
-      border-radius: 20px;
-      font-size: 13px;
-      font-weight: 500;
-    }
-    
-    .watermark {
-      text-align: center;
-      margin-top: 40px;
-      padding-top: 20px;
-      border-top: 1px solid #ddd;
-      color: #999;
-      font-size: 12px;
-    }
-  </style>
-</head>
-<body>
-  <div class="header">
-    <h1>${data.personalInfo.name}</h1>
-    ${data.personalInfo.headline ? `<div class="headline">${data.personalInfo.headline}</div>` : ''}
-    <div class="contact-info">
-      ${data.personalInfo.email ? `<span>${data.personalInfo.email}</span>` : ''}
-      ${data.personalInfo.phone ? `<span>${data.personalInfo.phone}</span>` : ''}
-      ${data.personalInfo.location ? `<span>${data.personalInfo.location}</span>` : ''}
-    </div>
-  </div>
-  
-  ${enabledSections.length > 0 ? enabledSections.map(section => {
-    if (section.id === 'summary' && data.summary && isSectionEnabled('summary')) {
-      return `
-  <div class="section">
-    <h2 class="section-title">Professional Summary</h2>
-    <div class="section-content">
-      <p>${data.summary}</p>
-    </div>
-  </div>`;
-    } else if (section.id === 'experience' && data.experience.length > 0 && isSectionEnabled('experience')) {
-      return `
-  <div class="section">
-    <h2 class="section-title">Work Experience</h2>
-    <div class="section-content">
-      ${data.experience.map((exp: any) => `
-        <div class="experience-item">
-          <div class="item-title">${exp.jobTitle}</div>
-          <div class="item-subtitle">${exp.company} | ${exp.dates}</div>
-          ${exp.description ? `<div class="item-description">${exp.description}</div>` : ''}
-        </div>
-      `).join('')}
-    </div>
-  </div>`;
-    } else if (section.id === 'education' && data.education.length > 0 && isSectionEnabled('education')) {
-      return `
-  <div class="section">
-    <h2 class="section-title">Education</h2>
-    <div class="section-content">
-      ${data.education.map((edu: any) => `
-        <div class="education-item">
-          <div class="item-title">${edu.degree}</div>
-          <div class="item-subtitle">${edu.institution} | ${edu.year}</div>
-          ${edu.gpa ? `<div class="item-description">GPA: ${edu.gpa}</div>` : ''}
-        </div>
-      `).join('')}
-    </div>
-  </div>`;
-    } else if (section.id === 'skills' && data.skills.length > 0 && isSectionEnabled('skills')) {
-      return `
-  <div class="section">
-    <h2 class="section-title">Skills</h2>
-    <div class="section-content">
-      <div class="skills-container">
-        ${data.skills.map((skill: string) => `<span class="skill-badge">${skill}</span>`).join('')}
-      </div>
-    </div>
-  </div>`;
-    } else if (section.id === 'certifications' && data.certifications.length > 0 && isSectionEnabled('certifications')) {
-      return `
-  <div class="section">
-    <h2 class="section-title">Certifications</h2>
-    <div class="section-content">
-      ${data.certifications.map((cert: any) => `
-        <div class="certification-item">
-          <div class="item-title">${cert.name}</div>
-          <div class="item-subtitle">${cert.issuer} | ${cert.date}</div>
-        </div>
-      `).join('')}
-    </div>
-  </div>`;
-    } else if (section.id === 'projects' && data.projects.length > 0 && isSectionEnabled('projects')) {
-      return `
-  <div class="section">
-    <h2 class="section-title">Projects</h2>
-    <div class="section-content">
-      ${data.projects.map((proj: any) => `
-        <div class="project-item">
-          <div class="item-title">${proj.name}</div>
-          <div class="item-description">${proj.description}</div>
-          ${proj.technologies.length > 0 ? `
-            <div style="margin-top: 8px;">
-              ${proj.technologies.map((tech: string) => `<span class="skill-badge" style="font-size: 11px; padding: 4px 10px;">${tech}</span>`).join('')}
-            </div>
-          ` : ''}
-        </div>
-      `).join('')}
-    </div>
-  </div>`;
-    }
-    return '';
-  }).join('') : `
-  ${data.summary && isSectionEnabled('summary') ? `
-  <div class="section">
-    <h2 class="section-title">Professional Summary</h2>
-    <div class="section-content">
-      <p>${data.summary}</p>
-    </div>
-  </div>` : ''}
-  ${data.experience.length > 0 && isSectionEnabled('experience') ? `
-  <div class="section">
-    <h2 class="section-title">Work Experience</h2>
-    <div class="section-content">
-      ${data.experience.map((exp: any) => `
-        <div class="experience-item">
-          <div class="item-title">${exp.jobTitle}</div>
-          <div class="item-subtitle">${exp.company} | ${exp.dates}</div>
-          ${exp.description ? `<div class="item-description">${exp.description}</div>` : ''}
-        </div>
-      `).join('')}
-    </div>
-  </div>` : ''}
-  ${data.education.length > 0 && isSectionEnabled('education') ? `
-  <div class="section">
-    <h2 class="section-title">Education</h2>
-    <div class="section-content">
-      ${data.education.map((edu: any) => `
-        <div class="education-item">
-          <div class="item-title">${edu.degree}</div>
-          <div class="item-subtitle">${edu.institution} | ${edu.year}</div>
-          ${edu.gpa ? `<div class="item-description">GPA: ${edu.gpa}</div>` : ''}
-        </div>
-      `).join('')}
-    </div>
-  </div>` : ''}
-  ${data.skills.length > 0 && isSectionEnabled('skills') ? `
-  <div class="section">
-    <h2 class="section-title">Skills</h2>
-    <div class="section-content">
-      <div class="skills-container">
-        ${data.skills.map((skill: string) => `<span class="skill-badge">${skill}</span>`).join('')}
-      </div>
-    </div>
-  </div>` : ''}
-  ${data.certifications.length > 0 && isSectionEnabled('certifications') ? `
-  <div class="section">
-    <h2 class="section-title">Certifications</h2>
-    <div class="section-content">
-      ${data.certifications.map((cert: any) => `
-        <div class="certification-item">
-          <div class="item-title">${cert.name}</div>
-          <div class="item-subtitle">${cert.issuer} | ${cert.date}</div>
-        </div>
-      `).join('')}
-    </div>
-  </div>` : ''}
-  ${data.projects.length > 0 && isSectionEnabled('projects') ? `
-  <div class="section">
-    <h2 class="section-title">Projects</h2>
-    <div class="section-content">
-      ${data.projects.map((proj: any) => `
-        <div class="project-item">
-          <div class="item-title">${proj.name}</div>
-          <div class="item-description">${proj.description}</div>
-          ${proj.technologies.length > 0 ? `
-            <div style="margin-top: 8px;">
-              ${proj.technologies.map((tech: string) => `<span class="skill-badge" style="font-size: 11px; padding: 4px 10px;">${tech}</span>`).join('')}
-            </div>
-          ` : ''}
-        </div>
-      `).join('')}
-    </div>
-  </div>` : ''}
-  `}
-  
-  ${includeWatermark ? `
-  <div class="watermark">
-    Generated with Resume Builder
-  </div>
-  ` : ''}
-</body>
-</html>
-    `;
   };
 
   const generatePlainText = (data: any): string => {
@@ -468,29 +173,158 @@ export function ResumeExport({ resumeId, resumeName, resumeData, sections }: Res
     
     return text;
   };
-
+  
+  const generateHTMLContent = (data: any): string => {
+    const sections: string[] = [];
+    
+    // Sanitize all user data to prevent XSS
+    const safeName = escapeText(data.personalInfo.name);
+    const safeHeadline = escapeText(data.personalInfo.headline);
+    const safeEmail = escapeText(data.personalInfo.email);
+    const safePhone = escapeText(data.personalInfo.phone);
+    const safeLocation = escapeText(data.personalInfo.location);
+  
+    sections.push(`
+      <header style="text-align:center;margin-bottom:16px;">
+        <h1 style="margin:0;font-size:28px;font-weight:bold;">${safeName}</h1>
+        ${safeHeadline ? `<p style=\"margin:4px 0;font-size:16px;\">${safeHeadline}</p>` : ""}
+        <p style="margin:4px 0;font-size:14px;color:#4b5563;">
+          ${[safeEmail, safePhone, safeLocation].filter(Boolean).join(" | ")}
+        </p>
+      </header>
+    `);
+  
+    if (data.summary) {
+      const safeSummary = escapeText(data.summary);
+      sections.push(`
+        <section style="margin-bottom:16px;">
+          <h2 style="margin:0 0 4px 0;font-size:16px;border-bottom:1px solid #e5e7eb;">Professional Summary</h2>
+          <p style="margin:0;font-size:14px;line-height:1.5;">${safeSummary}</p>
+        </section>
+      `);
+    }
+  
+    if (data.experience.length > 0) {
+      const items = data.experience.map((exp: any) => `
+        <div style=\"margin-bottom:12px;\">
+          <div style=\"font-weight:600;\">${escapeText(exp.jobTitle)}</div>
+          <div style=\"font-size:13px;color:#4b5563;\">${escapeText(exp.company)} | ${escapeText(exp.dates)}</div>
+          ${exp.description ? `<p style=\\\"margin:4px 0 0 0;font-size:14px;line-height:1.5;\\\">${escapeText(exp.description)}</p>` : ""}
+        </div>
+      `).join("");
+  
+      sections.push(`
+        <section style="margin-bottom:16px;">
+          <h2 style="margin:0 0 4px 0;font-size:16px;border-bottom:1px solid #e5e7eb;">Work Experience</h2>
+          ${items}
+        </section>
+      `);
+    }
+  
+    if (data.education.length > 0) {
+      const items = data.education.map((edu: any) => `
+        <div style=\"margin-bottom:8px;\">
+          <div style=\"font-weight:600;\">${escapeText(edu.degree)}</div>
+          <div style=\"font-size:13px;color:#4b5563;\">${escapeText(edu.institution)} | ${escapeText(String(edu.year))}${edu.gpa ? ` • GPA: ${escapeText(String(edu.gpa))}` : ""}</div>
+        </div>
+      `).join("");
+  
+      sections.push(`
+        <section style="margin-bottom:16px;">
+          <h2 style="margin:0 0 4px 0;font-size:16px;border-bottom:1px solid #e5e7eb;">Education</h2>
+          ${items}
+        </section>
+      `);
+    }
+  
+    if (data.skills.length > 0) {
+      const safeSkills = data.skills.map((s: string) => escapeText(s)).join(', ');
+      sections.push(`
+        <section style="margin-bottom:16px;">
+          <h2 style="margin:0 0 4px 0;font-size:16px;border-bottom:1px solid #e5e7eb;">Skills</h2>
+          <p style="margin:0;font-size:14px;">${safeSkills}</p>
+        </section>
+      `);
+    }
+  
+    if (data.certifications.length > 0) {
+      const items = data.certifications.map((cert: any) => `
+        <li>${escapeText(cert.name)} - ${escapeText(cert.issuer)} (${escapeText(cert.date)})</li>
+      `).join("");
+  
+      sections.push(`
+        <section style="margin-bottom:16px;">
+          <h2 style="margin:0 0 4px 0;font-size:16px;border-bottom:1px solid #e5e7eb;">Certifications</h2>
+          <ul style="margin:0 0 0 16px;font-size:14px;">${items}</ul>
+        </section>
+      `);
+    }
+  
+    if (data.projects.length > 0) {
+      const items = data.projects.map((proj: any) => `
+        <div style=\"margin-bottom:12px;\">
+          <div style=\"font-weight:600;\">${escapeText(proj.name)}</div>
+          <p style=\"margin:4px 0 0 0;font-size:14px;line-height:1.5;\">${escapeText(proj.description)}</p>
+        </div>
+      `).join("");
+  
+      sections.push(`
+        <section style="margin-bottom:16px;">
+          <h2 style="margin:0 0 4px 0;font-size:16px;border-bottom:1px solid #e5e7eb;">Projects</h2>
+          ${items}
+        </section>
+      `);
+    }
+  
+    const watermark = includeWatermark
+      ? `<footer style=\"margin-top:24px;font-size:11px;color:#9ca3af;text-align:center;\">Generated with Resume Builder</footer>`
+      : "";
+  
+    const safeTitle = escapeText(`${data.personalInfo.name} - Resume`);
+    return `<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>${safeTitle}</title>
+    <style>
+      body { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 32px; color: #111827; }
+      h1, h2 { color: #111827; }
+    </style>
+  </head>
+  <body>
+    ${sections.join('\n')}
+    ${watermark}
+  </body>
+</html>`;
+  };
+ 
   const exportAsPDF = async () => {
     setIsExporting(true);
     try {
-      const data = formatResumeData();
-      const htmlContent = generateHTMLContent(data);
-      
-      // Create temporary element
-      const element = document.createElement('div');
-      element.innerHTML = htmlContent;
-      document.body.appendChild(element);
-      
+      if (!previewRef.current) {
+        toast.error('Preview not available for export');
+        setIsExporting(false);
+        return;
+      }
+      // Clone the preview node to avoid layout issues
+      const node = previewRef.current.cloneNode(true) as HTMLElement;
+      node.style.display = 'block';
+      node.style.position = 'static';
+      node.style.background = 'white';
+      node.style.color = 'black';
+      node.style.width = '794px'; // A4 width at 96dpi
+      node.style.padding = '0';
+      node.style.overflow = 'hidden';
+      document.body.appendChild(node);
       const opt = {
-        margin: [0.5, 0.5, 0.5, 0.5] as [number, number, number, number],
+        margin: 0,
         filename: `${filename}.pdf`,
         image: { type: 'jpeg' as const, quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true },
-        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' as const }
+        html2canvas: { scale: 2, useCORS: true, dpi: 96, letterRendering: true },
+        jsPDF: { unit: 'pt' as const, format: 'a4' as const, orientation: 'portrait' as const },
       };
-      
-      await html2pdf().set(opt).from(element).save();
-      
-      document.body.removeChild(element);
+      await html2pdf().set(opt).from(node).save();
+      document.body.removeChild(node);
       toast.success('PDF exported successfully!');
     } catch (error) {
       console.error('PDF export error:', error);
@@ -508,7 +342,7 @@ export function ResumeExport({ resumeId, resumeName, resumeData, sections }: Res
       const { data: result, error } = await supabase.functions.invoke('export-resume-docx', {
         body: {
           resumeData: { ...data, name: data.personalInfo.name },
-          theme,
+          theme: currentTheme,
           includeWatermark
         }
       });
@@ -626,103 +460,90 @@ export function ResumeExport({ resumeId, resumeName, resumeData, sections }: Res
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Download className="h-5 w-5" />
+      {/* Hidden preview for export (WYSIWYG) */}
+      <div
+        style={{
+          position: 'absolute',
+          left: '-9999px',
+          top: 0,
+          zIndex: -1,
+          width: '100vw',
+          minHeight: '100vh',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'flex-start',
+          background: 'transparent',
+        }}
+        aria-hidden
+      >
+        <div
+          ref={previewRef}
+          style={{
+            width: '794px', // A4 width at 96dpi
+            background: 'white',
+            padding: 0,
+            margin: 0,
+            overflow: 'hidden',
+            display: 'block',
+            boxSizing: 'border-box',
+          }}
+        >
+          <SimpleResumeTemplate data={formatResumeData()} primaryColor={primaryColor} templateStyle={templateStyle} />
+        </div>
+      </div>
+      <div style={{ maxWidth: 900, margin: '0 auto' }}>
+        <div style={{ marginBottom: 24 }}>
+          <h2 style={{ fontSize: 22, fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Download style={{ width: 24, height: 24 }} />
             Export Resume
-          </CardTitle>
-          <CardDescription>
+          </h2>
+          <div style={{ color: '#555', fontSize: 15, marginTop: 4 }}>
             Download your resume in multiple formats for different use cases
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="format">Export Format</Label>
-              <Select value={exportFormat} onValueChange={(value: any) => setExportFormat(value)}>
-                <SelectTrigger id="format">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="pdf">
-                    <div className="flex items-center gap-2">
-                      <FileText className="h-4 w-4" />
-                      <span>PDF - Professional Document</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="docx">
-                    <div className="flex items-center gap-2">
-                      <FileType className="h-4 w-4" />
-                      <span>DOCX - Microsoft Word</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="html">
-                    <div className="flex items-center gap-2">
-                      <Code className="h-4 w-4" />
-                      <span>HTML - Web Portfolio</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="txt">
-                    <div className="flex items-center gap-2">
-                      <FileText className="h-4 w-4" />
-                      <span>TXT - Plain Text</span>
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="theme">Theme</Label>
-              <Select value={theme} onValueChange={(value: any) => setTheme(value)}>
-                <SelectTrigger id="theme">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="classic">Classic - Traditional Black</SelectItem>
-                  <SelectItem value="modern">Modern - Professional Blue</SelectItem>
-                  <SelectItem value="minimal">Minimal - Clean Gray</SelectItem>
-                  <SelectItem value="creative">Creative - Bold Purple</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="filename">Filename</Label>
-              <Input
-                id="filename"
-                value={filename}
-                onChange={(e) => setFilename(e.target.value)}
-                placeholder="my_resume"
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                Extension will be added automatically
-              </p>
-            </div>
-
-            <Separator />
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="watermark">Include Watermark</Label>
-                <p className="text-xs text-muted-foreground">
-                  Add a small branding footer
-                </p>
-              </div>
-              <Switch
-                id="watermark"
-                checked={includeWatermark}
-                onCheckedChange={setIncludeWatermark}
-              />
+          </div>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div>
+            <Label htmlFor="format">Export Format</Label>
+            <Select value={exportFormat} onValueChange={(value: any) => setExportFormat(value)}>
+              <SelectTrigger id="format">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="pdf">PDF - Professional Document</SelectItem>
+                <SelectItem value="docx">DOCX - Microsoft Word</SelectItem>
+                <SelectItem value="html">HTML - Web Portfolio</SelectItem>
+                <SelectItem value="txt">TXT - Plain Text</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label htmlFor="filename">Filename</Label>
+            <Input
+              id="filename"
+              value={filename}
+              onChange={(e) => setFilename(e.target.value)}
+              placeholder="my_resume"
+            />
+            <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>
+              Extension will be added automatically
             </div>
           </div>
-
-          <div className="flex gap-3">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div>
+              <Label htmlFor="watermark">Include Watermark</Label>
+              <div style={{ fontSize: 12, color: '#888' }}>Add a small branding footer</div>
+            </div>
+            <Switch
+              id="watermark"
+              checked={includeWatermark}
+              onCheckedChange={setIncludeWatermark}
+            />
+          </div>
+          <div style={{ display: 'flex', gap: 12 }}>
             <Button
               onClick={handleExport}
               disabled={isExporting}
-              className="flex-1"
+              style={{ flex: 1 }}
               size="lg"
             >
               {isExporting ? (
@@ -746,18 +567,17 @@ export function ResumeExport({ resumeId, resumeName, resumeData, sections }: Res
               Print
             </Button>
           </div>
-
-          <div className="rounded-lg bg-muted p-4 text-sm space-y-2">
-            <p className="font-medium">Format Guide:</p>
-            <ul className="space-y-1 text-muted-foreground">
+          <div style={{ background: '#f6f6f6', borderRadius: 8, padding: 16, fontSize: 14, color: '#555' }}>
+            <div style={{ fontWeight: 600 }}>Format Guide:</div>
+            <ul style={{ margin: 0, paddingLeft: 18 }}>
               <li><strong>PDF:</strong> Best for email submissions and ATS systems</li>
               <li><strong>DOCX:</strong> Editable format for recruiters</li>
               <li><strong>HTML:</strong> Perfect for personal websites</li>
               <li><strong>TXT:</strong> For online application forms</li>
             </ul>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }

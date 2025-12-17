@@ -1,7 +1,9 @@
 /**
- * Structured logging utility with appropriate levels
+ * Structured logging utility with environment-configurable levels
  * Provides searchable fields and consistent log format
  */
+
+import { config } from '@/config/environment';
 
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'fatal';
 
@@ -23,14 +25,27 @@ interface LogEntry {
   environment: string;
 }
 
+// Log level priority (higher number = more severe)
+const LOG_LEVEL_PRIORITY: Record<LogLevel, number> = {
+  debug: 0,
+  info: 1,
+  warn: 2,
+  error: 3,
+  fatal: 4,
+};
+
 class Logger {
   private static instance: Logger;
   private logs: LogEntry[] = [];
   private maxLogs = 1000;
   private environment: string;
+  private configuredLevel: LogLevel;
+  private lastUpdate: number = Date.now();
+  private subscribers: Set<() => void> = new Set();
 
   private constructor() {
-    this.environment = import.meta.env.MODE || 'development';
+    this.environment = config.app.env;
+    this.configuredLevel = config.app.logLevel;
   }
 
   static getInstance(): Logger {
@@ -38,6 +53,13 @@ class Logger {
       Logger.instance = new Logger();
     }
     return Logger.instance;
+  }
+
+  /**
+   * Check if a log level should be output based on configured level
+   */
+  private shouldLog(level: LogLevel): boolean {
+    return LOG_LEVEL_PRIORITY[level] >= LOG_LEVEL_PRIORITY[this.configuredLevel];
   }
 
   private createEntry(level: LogLevel, message: string, context: LogContext = {}): LogEntry {
@@ -55,6 +77,11 @@ class Logger {
   }
 
   private log(level: LogLevel, message: string, context: LogContext = {}): void {
+    // Skip if below configured log level
+    if (!this.shouldLog(level)) {
+      return;
+    }
+
     const entry = this.createEntry(level, message, context);
     
     // Store in memory for dashboard
@@ -62,12 +89,15 @@ class Logger {
     if (this.logs.length > this.maxLogs) {
       this.logs.shift();
     }
+    
+    // Notify subscribers of the change
+    this.notifySubscribers();
 
     // Console output with appropriate method
-    const consoleMethod = level === 'fatal' ? 'error' : level;
+    const consoleMethod = level === 'fatal' || level === 'error' ? 'error' : level === 'warn' ? 'warn' : level === 'info' ? 'info' : 'log';
     const logData = { ...entry };
     
-    if (this.environment === 'development') {
+    if (config.isDevelopment) {
       console[consoleMethod](`[${level.toUpperCase()}] ${message}`, logData);
     } else {
       // In production, use structured JSON for searchability
@@ -76,9 +106,7 @@ class Logger {
   }
 
   debug(message: string, context?: LogContext): void {
-    if (this.environment === 'development') {
-      this.log('debug', message, context);
-    }
+    this.log('debug', message, context);
   }
 
   info(message: string, context?: LogContext): void {
@@ -95,6 +123,20 @@ class Logger {
 
   fatal(message: string, context?: LogContext): void {
     this.log('fatal', message, context);
+  }
+
+  /**
+   * Get current configured log level
+   */
+  getLogLevel(): LogLevel {
+    return this.configuredLevel;
+  }
+
+  /**
+   * Dynamically update log level (useful for debugging)
+   */
+  setLogLevel(level: LogLevel): void {
+    this.configuredLevel = level;
   }
 
   getLogs(): LogEntry[] {
@@ -122,6 +164,7 @@ class Logger {
 
   clearLogs(): void {
     this.logs = [];
+    this.notifySubscribers();
   }
 
   getStats(): { total: number; byLevel: Record<LogLevel, number> } {
@@ -138,6 +181,35 @@ class Logger {
     });
 
     return { total: this.logs.length, byLevel };
+  }
+
+  /**
+   * Get timestamp of last log update (for change detection)
+   */
+  getLastUpdate(): number {
+    return this.lastUpdate;
+  }
+
+  /**
+   * Subscribe to log changes (for useSyncExternalStore)
+   */
+  subscribe(callback: () => void): () => void {
+    this.subscribers.add(callback);
+    return () => {
+      this.subscribers.delete(callback);
+    };
+  }
+
+  /**
+   * Get snapshot for useSyncExternalStore
+   */
+  getSnapshot(): number {
+    return this.lastUpdate;
+  }
+
+  private notifySubscribers(): void {
+    this.lastUpdate = Date.now();
+    this.subscribers.forEach(callback => callback());
   }
 }
 

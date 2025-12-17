@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { AppNav } from '@/components/layout/AppNav';
+import { JobSidebar } from '@/components/layout/JobSidebar';
 import { JobLocationMap } from '@/components/jobs/JobLocationMap';
 import { HomeAddressSettings } from '@/components/jobs/HomeAddressSettings';
 import { LocationComparison } from '@/components/jobs/LocationComparison';
@@ -10,10 +11,12 @@ import { JobDetailsDialog } from '@/components/jobs/JobDetailsDialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Map, Home, Scale, Settings, MapPin, Globe } from 'lucide-react';
+import { Map, Home, Scale, Settings, MapPin, Globe, BarChart3, DollarSign, TrendingUp, GitCompare, Activity, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function JobMap() {
+  const location = useLocation();
+  const isCurrentPage = (path: string) => location.pathname === path;
   const navigate = useNavigate();
   const [session, setSession] = useState<any>(null);
   const [selectedJob, setSelectedJob] = useState<any>(null);
@@ -105,21 +108,28 @@ export default function JobMap() {
   if (!session) return null;
 
   return (
-    <div className="min-h-screen bg-background">
+    <>
       <AppNav />
-      <main className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold flex items-center gap-3">
-            <Map className="h-8 w-8" />
-            Job Location Map
-          </h1>
-          <p className="text-muted-foreground mt-2">
-            Visualize your job opportunities on an interactive map and compare commute times.
-          </p>
-        </div>
+      
+      <div className="flex min-h-screen bg-background pt-16">
+        <JobSidebar activeTab="job-map" />
 
-        {/* Stats Overview */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+        {/* Main Content */}
+        <main className="flex-1 overflow-x-hidden lg:ml-56">
+          <div className="h-full overflow-y-auto">
+            <div className="container mx-auto px-4 py-8 max-w-7xl lg:pt-0 pt-16">
+              <div className="space-y-2 mb-6">
+                <div className="flex items-center gap-3">
+                  <Map className="h-8 w-8 text-primary" />
+                  <h1 className="text-3xl font-bold">Job Location Map</h1>
+                </div>
+                <p className="text-muted-foreground">
+                  Visualize your job opportunities on an interactive map and compare commute times
+                </p>
+              </div>
+
+              {/* Stats Overview */}
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
           <Card>
             <CardContent className="py-4 text-center">
               <div className="text-2xl font-bold">{jobStats.total}</div>
@@ -159,16 +169,16 @@ export default function JobMap() {
         </div>
 
         <Tabs defaultValue="map" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="map" className="flex items-center gap-2">
+          <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3">
+            <TabsTrigger value="map" className="flex items-center gap-2 text-xs sm:text-sm px-1 sm:px-2">
               <Map className="h-4 w-4" />
               Interactive Map
             </TabsTrigger>
-            <TabsTrigger value="compare" className="flex items-center gap-2">
+            <TabsTrigger value="compare" className="flex items-center gap-2 text-xs sm:text-sm px-1 sm:px-2">
               <Scale className="h-4 w-4" />
               Compare Locations
             </TabsTrigger>
-            <TabsTrigger value="settings" className="flex items-center gap-2">
+            <TabsTrigger value="settings" className="flex items-center gap-2 text-xs sm:text-sm px-1 sm:px-2">
               <Settings className="h-4 w-4" />
               Settings
             </TabsTrigger>
@@ -252,7 +262,10 @@ export default function JobMap() {
             }}
           />
         )}
-      </main>
-    </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </>
   );
 }

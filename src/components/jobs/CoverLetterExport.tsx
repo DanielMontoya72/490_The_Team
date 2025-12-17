@@ -297,7 +297,7 @@ ${applicantName}
 
     const printContent = `
       <!DOCTYPE html>
-      <html>
+      <html lang="en">
         <head>
           <title>Cover Letter - ${jobTitle}</title>
           <style>

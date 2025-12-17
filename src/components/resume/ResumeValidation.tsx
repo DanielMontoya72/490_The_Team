@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { AlertCircle, CheckCircle, AlertTriangle, Mail, Phone, MapPin, Sparkles, Loader2 } from "lucide-react";
+import { AlertCircle, CheckCircle, AlertTriangle, Mail, Phone, MapPin, Sparkles, Loader2, BookmarkCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -17,9 +17,18 @@ interface ValidationIssue {
 interface ResumeValidationProps {
   content: any;
   resumeName: string;
+  onShowSkillGap?: () => void;
+  onShowTailoredVersions?: () => void;
+  hasJobSelected?: boolean;
 }
 
-export const ResumeValidation = ({ content, resumeName }: ResumeValidationProps) => {
+export const ResumeValidation = ({ 
+  content, 
+  resumeName,
+  onShowSkillGap,
+  onShowTailoredVersions,
+  hasJobSelected = false
+}: ResumeValidationProps) => {
   const [issues, setIssues] = useState<ValidationIssue[]>([]);
   const [score, setScore] = useState(0);
   const [aiValidating, setAiValidating] = useState(false);
@@ -283,28 +292,51 @@ export const ResumeValidation = ({ content, resumeName }: ResumeValidationProps)
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <CardTitle className="flex items-center gap-2">
             Resume Quality Score
           </CardTitle>
-          <Button
-            onClick={handleAIValidation}
-            disabled={aiValidating}
-            size="sm"
-            variant="outline"
-          >
-            {aiValidating ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Validating...
-              </>
-            ) : (
-              <>
-                <Sparkles className="h-4 w-4 mr-2" />
-                AI Validation
-              </>
+          <div className="flex gap-2 flex-wrap">
+            {onShowSkillGap && (
+              <Button
+                onClick={onShowSkillGap}
+                disabled={!hasJobSelected}
+                size="sm"
+                variant="secondary"
+              >
+                <AlertCircle className="h-4 w-4 mr-2" />
+                Skill Gap
+              </Button>
             )}
-          </Button>
+            {onShowTailoredVersions && (
+              <Button
+                onClick={onShowTailoredVersions}
+                size="sm"
+                variant="outline"
+              >
+                <BookmarkCheck className="h-4 w-4 mr-2" />
+                Tailored Versions
+              </Button>
+            )}
+            <Button
+              onClick={handleAIValidation}
+              disabled={aiValidating}
+              size="sm"
+              variant="outline"
+            >
+              {aiValidating ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Validating...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  AI Validation
+                </>
+              )}
+            </Button>
+          </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">

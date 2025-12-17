@@ -8,6 +8,7 @@ import { CreateTeamDialog } from "@/components/teams/CreateTeamDialog";
 import { TeamCard } from "@/components/teams/TeamCard";
 import { User } from "@supabase/supabase-js";
 import { AppNav } from "@/components/layout/AppNav";
+import { ContactSidebar } from "@/components/layout/ContactSidebar";
 
 interface Team {
   id: string;
@@ -83,19 +84,26 @@ export default function Teams() {
   return (
     <>
       <AppNav />
-      <div className="container mx-auto px-4 py-6 md:py-8 space-y-4 md:space-y-6">
-      <div className="text-center space-y-3 md:space-y-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-2">Teams</h1>
-          <p className="text-sm sm:text-base text-muted-foreground">
-            Collaborate with your team members and share templates
-          </p>
-        </div>
-        <Button onClick={() => setCreateDialogOpen(true)} size="lg" className="w-full sm:w-auto">
-          <Plus className="h-4 w-4 mr-2" />
-          Create Team
-        </Button>
-      </div>
+      
+      <div className="flex min-h-screen bg-background pt-16">
+        <ContactSidebar activeTab="teams" />
+        
+        {/* Main Content */}
+        <main className="flex-1 overflow-x-hidden lg:ml-56">
+          <div className="h-full overflow-y-auto">
+            <div className="container mx-auto px-4 py-8 max-w-7xl lg:pt-0 pt-16 space-y-6">
+              <div className="text-center space-y-4">
+                <div>
+                  <h1 className="text-4xl font-bold mb-2">Teams</h1>
+                  <p className="text-muted-foreground">
+                    Collaborate with your team members and share templates
+                  </p>
+                </div>
+                <Button onClick={() => setCreateDialogOpen(true)} size="lg">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Team
+                </Button>
+              </div>
 
       {teams.length === 0 ? (
         <Card>
@@ -127,6 +135,9 @@ export default function Teams() {
         onCreated={fetchTeams}
         userId={user?.id || ""}
       />
+            </div>
+          </div>
+        </main>
       </div>
     </>
   );

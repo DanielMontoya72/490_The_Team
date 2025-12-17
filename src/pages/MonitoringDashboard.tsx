@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback, useSyncExternalStore } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,13 +24,20 @@ import {
   Bell,
   BookOpen,
   Gauge,
-  BarChart3
+  BarChart3,
+  Database,
+  DollarSign,
+  TrendingUp,
+  GitCompare,
+  Map,
+  ChevronRight
 } from 'lucide-react';
 import { logger, LogLevel } from '@/lib/logger';
 import { apiMonitor, monitoredFetch } from '@/lib/apiMonitor';
 import { captureMessage, captureError } from '@/lib/sentry';
 import { useToast } from '@/hooks/use-toast';
 import { AppNav } from '@/components/layout/AppNav';
+import { AnalyticsSidebar } from '@/components/layout/AnalyticsSidebar';
 import { 
   getPerformanceMetrics, 
   checkPerformanceBudget, 
@@ -42,6 +50,12 @@ import { ApiErrorLog } from '@/components/monitoring/ApiErrorLog';
 import { ApiAlerts } from '@/components/monitoring/ApiAlerts';
 import { ApiWeeklyReport } from '@/components/monitoring/ApiWeeklyReport';
 import { ApiRateLimitStatus } from '@/components/monitoring/ApiRateLimitStatus';
+import { ResourceMonitor } from '@/components/monitoring/ResourceMonitor';
+import { SecurityTestPanel } from '@/components/monitoring/SecurityTestPanel';
+import { PenetrationTestPanel } from '@/components/monitoring/PenetrationTestPanel';
+import { BackupRecoveryDashboard } from '@/components/monitoring/BackupRecoveryDashboard';
+import { supabase } from '@/integrations/supabase/client';
+import { HardDrive } from 'lucide-react';
 
 const levelColors: Record<LogLevel, string> = {
   debug: 'bg-muted text-muted-foreground',
@@ -112,6 +126,8 @@ const acceptanceCriteria = [
 ];
 
 export default function MonitoringDashboard() {
+  const location = useLocation();
+  const isCurrentPage = (path: string) => location.pathname === path;
   const [logs, setLogs] = useState(logger.getLogs());
   const [logStats, setLogStats] = useState(logger.getStats());
   const [apiStats, setApiStats] = useState(apiMonitor.getStats());
@@ -126,7 +142,20 @@ export default function MonitoringDashboard() {
   const [perfBudget, setPerfBudget] = useState(checkPerformanceBudget());
   const { toast } = useToast();
 
-  const refreshData = () => {
+  // Subscribe to logger changes using useSyncExternalStore for instant updates
+  const logSnapshot = useSyncExternalStore(
+    useCallback((callback) => logger.subscribe(callback), []),
+    useCallback(() => logger.getSnapshot(), [])
+  );
+
+  // Update logs whenever the snapshot changes (instant, push-based)
+  useEffect(() => {
+    setLogs(logger.getLogs());
+    setLogStats(logger.getStats());
+  }, [logSnapshot]);
+
+  // Full refresh for all data (manual trigger)
+  const refreshData = useCallback(() => {
     setLogs(logger.getLogs());
     setLogStats(logger.getStats());
     setApiStats(apiMonitor.getStats());
@@ -135,11 +164,19 @@ export default function MonitoringDashboard() {
     setNavTiming(getNavigationTiming());
     setResourceTimings(getResourceTimings());
     setPerfBudget(checkPerformanceBudget());
-  };
+  }, []);
 
+  // API/performance metrics refresh - every 5 seconds (heavier operations)
   useEffect(() => {
-    const interval = setInterval(refreshData, 5000);
-    return () => clearInterval(interval);
+    const dataInterval = setInterval(() => {
+      setApiStats(apiMonitor.getStats());
+      setRecentErrors(apiMonitor.getRecentErrors());
+      setPerfMetrics(getPerformanceMetrics());
+      setNavTiming(getNavigationTiming());
+      setResourceTimings(getResourceTimings());
+      setPerfBudget(checkPerformanceBudget());
+    }, 5000);
+    return () => clearInterval(dataInterval);
   }, []);
 
   const filteredLogs = logs.filter(log => {
@@ -192,33 +229,36 @@ export default function MonitoringDashboard() {
         break;
 
       case 'testApiMonitor':
-        // Make test API calls to demonstrate monitoring
-        toast({ title: 'Testing API monitoring...', description: 'Making sample requests' });
+        // Make test API calls to demonstrate monitoring - now persists to database
+        toast({ title: 'Testing API monitoring...', description: 'Making sample requests and saving to database' });
         
         try {
-          // Test successful request
-          await monitoredFetch('https://jsonplaceholder.typicode.com/posts/1');
+          // Test successful requests with different service identifiers
+          await monitoredFetch('https://jsonplaceholder.typicode.com/posts/1', undefined, 'github_api');
+          await monitoredFetch('https://jsonplaceholder.typicode.com/users/1', undefined, 'gmail_api');
+          await monitoredFetch('https://jsonplaceholder.typicode.com/comments/1', undefined, 'linkedin_api');
           
-          // Test another endpoint
-          await monitoredFetch('https://jsonplaceholder.typicode.com/users/1');
-          
-          // Test failed request (will fail silently)
+          // Test failed request
           try {
-            await monitoredFetch('https://jsonplaceholder.typicode.com/invalid-endpoint-404');
+            await monitoredFetch('https://jsonplaceholder.typicode.com/invalid-endpoint-404', undefined, 'linkedin_api');
           } catch (e) {
             // Expected to fail
           }
           
+          // Force flush to database
+          await apiMonitor.forceFlush();
+          
           refreshData();
           toast({ 
             title: '✅ API Monitoring Test Complete', 
-            description: 'Check API Metrics tab to see tracked requests',
+            description: 'Data saved to database - check API Dashboard tab',
           });
         } catch (error) {
+          await apiMonitor.forceFlush();
           refreshData();
           toast({ 
             title: '✅ API Monitoring Test Complete', 
-            description: 'Check API Metrics and Recent Errors tabs',
+            description: 'Check API Metrics and Errors tabs',
           });
         }
         break;
@@ -260,34 +300,127 @@ export default function MonitoringDashboard() {
     setShouldBreak(true);
   };
 
+  const handleSeedTestData = async () => {
+    toast({ title: 'Seeding test data...', description: 'Populating API usage tables with sample data' });
+    
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const services = ['github_api', 'gmail_api', 'linkedin_api', 'nominatim', 'mapbox', 'bls_api'];
+      
+      // Insert sample daily usage data
+      const dailyData = services.map(service => ({
+        service_name: service,
+        date: today,
+        total_requests: Math.floor(Math.random() * 100) + 10,
+        successful_requests: Math.floor(Math.random() * 90) + 10,
+        failed_requests: Math.floor(Math.random() * 10),
+        avg_response_time_ms: Math.floor(Math.random() * 500) + 50,
+        p95_response_time_ms: Math.floor(Math.random() * 1000) + 200,
+        total_response_time_ms: Math.floor(Math.random() * 50000) + 5000,
+      }));
+
+      // Upsert daily data
+      for (const data of dailyData) {
+        const { data: existing } = await supabase
+          .from('api_usage_daily')
+          .select('id')
+          .eq('service_name', data.service_name)
+          .eq('date', data.date)
+          .single();
+
+        if (existing) {
+          await supabase.from('api_usage_daily').update(data).eq('id', existing.id);
+        } else {
+          await supabase.from('api_usage_daily').insert(data);
+        }
+      }
+
+      // Insert sample logs
+      const sampleLogs = [];
+      for (let i = 0; i < 20; i++) {
+        const service = services[Math.floor(Math.random() * services.length)];
+        const success = Math.random() > 0.2;
+        sampleLogs.push({
+          service_name: service,
+          endpoint: `https://api.example.com/${service}/v1/resource`,
+          method: ['GET', 'POST', 'PUT'][Math.floor(Math.random() * 3)],
+          status_code: success ? 200 : [400, 401, 500, 503][Math.floor(Math.random() * 4)],
+          response_time_ms: Math.floor(Math.random() * 800) + 50,
+          success,
+          error_message: success ? null : 'Sample error message for testing',
+          created_at: new Date(Date.now() - Math.random() * 3600000).toISOString(),
+        });
+      }
+      await supabase.from('api_usage_logs').insert(sampleLogs);
+
+      // Insert sample alert
+      await supabase.from('api_alerts').insert({
+        service_name: 'gmail_api',
+        alert_type: 'quota_warning',
+        severity: 'warning',
+        message: 'Gmail API approaching 80% of daily quota',
+        current_value: 200,
+        threshold_value: 250,
+      });
+
+      refreshData();
+      toast({ 
+        title: '✅ Test Data Seeded', 
+        description: 'Sample API usage data has been added to the database',
+      });
+    } catch (error) {
+      console.error('Error seeding test data:', error);
+      toast({ 
+        title: 'Error', 
+        description: 'Failed to seed test data',
+        variant: 'destructive',
+      });
+    }
+  };
+
   // This throws during render, which ErrorBoundary can catch and send to Sentry
   if (shouldBreak) {
     throw new Error('This is your first error!');
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <>
       <AppNav />
-      <div className="container mx-auto py-8 px-4">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-3xl font-bold">Monitoring Dashboard</h1>
-            <p className="text-muted-foreground">Application health, performance metrics, and testing</p>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={refreshData}>
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Refresh
-            </Button>
-            <Button variant="destructive" onClick={handleBreakTheWorld}>
-              <Bug className="h-4 w-4 mr-2" />
-              Break the world (Sentry Test)
-            </Button>
-          </div>
-        </div>
+      
+      <div className="flex min-h-screen bg-background pt-16">
+        {/* Main Content */}
+        <main className="flex-1 overflow-x-hidden">
+          <div className="h-full overflow-y-auto">
+            <div className="container mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-8 max-w-7xl">
+              <div className="space-y-3 sm:space-y-2 mb-4 sm:mb-6">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                  <Activity className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
+                  <h1 className="text-2xl sm:text-3xl font-bold">Monitoring Dashboard</h1>
+                </div>
+                <p className="text-sm sm:text-base text-muted-foreground">
+                  Application health, performance metrics, and testing
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2 mb-4 sm:mb-6">
+                <Button variant="outline" size="sm" onClick={handleSeedTestData}>
+                  <Database className="h-4 w-4 mr-2" />
+                  <span className="hidden sm:inline">Seed Test Data</span>
+                  <span className="sm:hidden">Seed Data</span>
+                </Button>
+                <Button variant="outline" size="sm" onClick={refreshData}>
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Refresh
+                </Button>
+                <Button variant="destructive" size="sm" onClick={handleBreakTheWorld}>
+                  <Bug className="h-4 w-4 mr-2" />
+                  <span className="hidden sm:inline">Break the world</span>
+                  <span className="sm:hidden">Break</span>
+                </Button>
+              </div>
+            </div>
 
         {/* Key Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6 px-3 sm:px-4 lg:px-6">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium flex items-center gap-2">
@@ -296,7 +429,7 @@ export default function MonitoringDashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{apiStats.totalRequests}</div>
+              <div className="text-xl sm:text-2xl font-bold">{apiStats.totalRequests}</div>
               <p className="text-xs text-muted-foreground">
                 {apiStats.successRate}% success rate
               </p>
@@ -311,7 +444,7 @@ export default function MonitoringDashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{apiStats.averageResponseTime}ms</div>
+              <div className="text-xl sm:text-2xl font-bold">{apiStats.averageResponseTime}ms</div>
               <p className="text-xs text-muted-foreground">
                 {apiStats.slowRequestRate}% slow requests (&gt;5s)
               </p>
@@ -326,7 +459,7 @@ export default function MonitoringDashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{apiStats.errorRate}%</div>
+              <div className="text-xl sm:text-2xl font-bold">{apiStats.errorRate}%</div>
               <p className="text-xs text-muted-foreground">
                 {logStats.byLevel.error + logStats.byLevel.fatal} total errors logged
               </p>
@@ -341,7 +474,7 @@ export default function MonitoringDashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{logStats.total}</div>
+              <div className="text-xl sm:text-2xl font-bold">{logStats.total}</div>
               <p className="text-xs text-muted-foreground">
                 {logStats.byLevel.warn} warnings, {logStats.byLevel.error} errors
               </p>
@@ -349,38 +482,62 @@ export default function MonitoringDashboard() {
           </Card>
         </div>
 
-        <Tabs defaultValue="api-dashboard" className="space-y-4">
-          <TabsList className="flex-wrap">
-            <TabsTrigger value="api-dashboard">
-              <BarChart3 className="h-4 w-4 mr-2" />
-              API Dashboard
-            </TabsTrigger>
-            <TabsTrigger value="quotas">
-              <Gauge className="h-4 w-4 mr-2" />
-              Quotas
-            </TabsTrigger>
-            <TabsTrigger value="api-alerts">
-              <Bell className="h-4 w-4 mr-2" />
-              Alerts
-            </TabsTrigger>
-            <TabsTrigger value="api-errors">
-              <AlertTriangle className="h-4 w-4 mr-2" />
-              API Errors
-            </TabsTrigger>
-            <TabsTrigger value="reports">
-              <FileText className="h-4 w-4 mr-2" />
-              Reports
-            </TabsTrigger>
-            <TabsTrigger value="checklist">
-              <CheckCircle className="h-4 w-4 mr-2" />
-              Checklist
-            </TabsTrigger>
-            <TabsTrigger value="performance">
-              <Gauge className="h-4 w-4 mr-2" />
-              Performance
-            </TabsTrigger>
-            <TabsTrigger value="logs">App Logs</TabsTrigger>
-          </TabsList>
+        <div className="px-3 sm:px-4 lg:px-6">
+          <Tabs defaultValue="api-dashboard" className="space-y-4">
+            <div className="overflow-x-auto">
+              <TabsList className="flex flex-wrap gap-1 h-auto p-1 min-w-full">
+                <TabsTrigger value="api-dashboard" className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2 text-xs sm:text-sm whitespace-nowrap">
+                  <BarChart3 className="h-3 w-3 sm:h-4 sm:w-4" />
+                  <span className="hidden xs:inline">API Dashboard</span>
+                  <span className="xs:hidden">API</span>
+                </TabsTrigger>
+                <TabsTrigger value="quotas" className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2 text-xs sm:text-sm whitespace-nowrap">
+                  <Gauge className="h-3 w-3 sm:h-4 sm:w-4" />
+                  Quotas
+                </TabsTrigger>
+                <TabsTrigger value="api-alerts" className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2 text-xs sm:text-sm whitespace-nowrap">
+                  <Bell className="h-3 w-3 sm:h-4 sm:w-4" />
+                  Alerts
+                </TabsTrigger>
+                <TabsTrigger value="api-errors" className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2 text-xs sm:text-sm whitespace-nowrap">
+                  <AlertTriangle className="h-3 w-3 sm:h-4 sm:w-4" />
+                  <span className="hidden sm:inline">API Errors</span>
+                  <span className="sm:hidden">Errors</span>
+                </TabsTrigger>
+                <TabsTrigger value="reports" className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2 text-xs sm:text-sm whitespace-nowrap">
+                  <FileText className="h-3 w-3 sm:h-4 sm:w-4" />
+                  Reports
+                </TabsTrigger>
+                <TabsTrigger value="checklist" className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2 text-xs sm:text-sm whitespace-nowrap">
+                  <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4" />
+                  <span className="hidden sm:inline">Checklist</span>
+                  <span className="sm:hidden">Check</span>
+                </TabsTrigger>
+                <TabsTrigger value="performance" className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2 text-xs sm:text-sm whitespace-nowrap">
+                  <Gauge className="h-3 w-3 sm:h-4 sm:w-4" />
+                  <span className="hidden sm:inline">Performance</span>
+                  <span className="sm:hidden">Perf</span>
+                </TabsTrigger>
+                <TabsTrigger value="resources" className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2 text-xs sm:text-sm whitespace-nowrap">
+                  <Database className="h-3 w-3 sm:h-4 sm:w-4" />
+                  <span className="hidden sm:inline">Resources</span>
+                  <span className="sm:hidden">Res</span>
+                </TabsTrigger>
+                <TabsTrigger value="security" className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2 text-xs sm:text-sm whitespace-nowrap">
+                  <Shield className="h-3 w-3 sm:h-4 sm:w-4" />
+                  Security
+                </TabsTrigger>
+                <TabsTrigger value="backup" className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2 text-xs sm:text-sm whitespace-nowrap">
+                  <HardDrive className="h-3 w-3 sm:h-4 sm:w-4" />
+                  <span className="hidden sm:inline">Backup & Recovery</span>
+                  <span className="sm:hidden">Backup</span>
+                </TabsTrigger>
+                <TabsTrigger value="logs" className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2 text-xs sm:text-sm whitespace-nowrap">
+                  <span className="hidden sm:inline">App Logs</span>
+                  <span className="sm:hidden">Logs</span>
+                </TabsTrigger>
+              </TabsList>
+            </div>
 
           {/* API Dashboard Tab */}
           <TabsContent value="api-dashboard" className="space-y-4">
@@ -420,26 +577,26 @@ export default function MonitoringDashboard() {
                   All requirements with test buttons to verify each feature
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-6">
                 <div className="space-y-4">
                   {acceptanceCriteria.map((item) => (
                     <div 
                       key={item.id} 
-                      className="flex items-start justify-between p-4 border rounded-lg bg-card hover:bg-muted/50 transition-colors"
+                      className="flex flex-col sm:flex-row sm:items-start justify-between p-4 border rounded-lg bg-card hover:bg-muted/50 transition-colors gap-4"
                     >
-                      <div className="flex items-start gap-3">
-                        <div className="mt-0.5">
+                      <div className="flex items-start gap-3 min-w-0">
+                        <div className="mt-0.5 flex-shrink-0">
                           {item.status === 'implemented' ? (
                             <CheckCircle className="h-5 w-5 text-green-500" />
                           ) : (
                             <AlertTriangle className="h-5 w-5 text-yellow-500" />
                           )}
                         </div>
-                        <div>
-                          <h4 className="font-medium">
+                        <div className="min-w-0">
+                          <h4 className="font-medium text-sm sm:text-base">
                             {item.id}. {item.title}
                           </h4>
-                          <p className="text-sm text-muted-foreground mt-1">
+                          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                             {item.description}
                           </p>
                         </div>
@@ -449,6 +606,7 @@ export default function MonitoringDashboard() {
                         size="sm"
                         onClick={() => handleTestAction(item.testAction)}
                         disabled={testingItem === item.testAction}
+                        className="flex-shrink-0"
                       >
                         {testingItem === item.testAction ? (
                           <RefreshCw className="h-4 w-4 animate-spin" />
@@ -534,8 +692,8 @@ export default function MonitoringDashboard() {
                   </Button>
                 </div>
               </CardHeader>
-              <CardContent>
-                <div className="flex gap-4 mb-4">
+              <CardContent className="space-y-4">
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                   <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
@@ -545,13 +703,14 @@ export default function MonitoringDashboard() {
                       className="pl-9"
                     />
                   </div>
-                  <div className="flex gap-1">
+                  <div className="flex flex-wrap gap-1 sm:gap-1">
                     {(['all', 'debug', 'info', 'warn', 'error', 'fatal'] as const).map((level) => (
                       <Button
                         key={level}
                         variant={selectedLevel === level ? 'default' : 'outline'}
                         size="sm"
                         onClick={() => setSelectedLevel(level)}
+                        className="text-xs"
                       >
                         {level}
                       </Button>
@@ -559,27 +718,27 @@ export default function MonitoringDashboard() {
                   </div>
                 </div>
                 <ScrollArea className="h-[400px]">
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {filteredLogs.length === 0 ? (
                       <p className="text-center text-muted-foreground py-8">
                         No logs found. Click "Test" on requirement #1 to generate sample logs.
                       </p>
                     ) : (
                       filteredLogs.map((log, index) => (
-                        <div key={index} className="p-3 bg-muted/50 rounded-lg">
+                        <div key={index} className="p-3 sm:p-4 bg-muted/50 rounded-lg space-y-2">
                           <div className="flex items-start justify-between gap-4">
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 min-w-0">
                               <Badge className={levelColors[log.level]}>
                                 {log.level}
                               </Badge>
-                              <span className="font-medium">{log.message}</span>
+                              <span className="font-medium text-sm sm:text-base truncate">{log.message}</span>
                             </div>
-                            <span className="text-xs text-muted-foreground whitespace-nowrap">
+                            <span className="text-xs text-muted-foreground whitespace-nowrap flex-shrink-0">
                               {new Date(log.timestamp).toLocaleTimeString()}
                             </span>
                           </div>
                           {Object.keys(log.context).length > 0 && (
-                            <pre className="mt-2 text-xs text-muted-foreground overflow-x-auto bg-background p-2 rounded">
+                            <pre className="text-xs text-muted-foreground overflow-x-auto bg-background p-2 rounded border">
                               {JSON.stringify(log.context, null, 2)}
                             </pre>
                           )}
@@ -606,17 +765,17 @@ export default function MonitoringDashboard() {
                     </p>
                   ) : (
                     Object.entries(apiStats.byEndpoint).map(([endpoint, stats]) => (
-                      <div key={endpoint} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                        <div className="flex-1">
-                          <p className="font-mono text-sm">{endpoint}</p>
-                          <p className="text-xs text-muted-foreground">{stats.count} requests</p>
+                      <div key={endpoint} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 bg-muted/50 rounded-lg gap-3">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-mono text-sm break-all">{endpoint}</p>
+                          <p className="text-xs text-muted-foreground mt-1">{stats.count} requests</p>
                         </div>
                         <div className="flex items-center gap-4">
                           <div className="text-right">
                             <p className="text-sm font-medium">{stats.avgTime}ms</p>
                             <p className="text-xs text-muted-foreground">avg time</p>
                           </div>
-                          <Badge variant={stats.errorRate > 10 ? 'destructive' : 'secondary'}>
+                          <Badge variant={stats.errorRate > 10 ? 'destructive' : 'secondary'} className="whitespace-nowrap">
                             {stats.errorRate}% errors
                           </Badge>
                         </div>
@@ -636,25 +795,25 @@ export default function MonitoringDashboard() {
               </CardHeader>
               <CardContent>
                 <ScrollArea className="h-[400px]">
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {recentErrors.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center py-8 text-center">
-                        <CheckCircle className="h-12 w-12 text-green-500 mb-2" />
+                      <div className="flex flex-col items-center justify-center py-8 text-center space-y-2">
+                        <CheckCircle className="h-12 w-12 text-green-500" />
                         <p className="text-muted-foreground">No recent API errors - system healthy!</p>
                       </div>
                     ) : (
                       recentErrors.map((error, index) => (
-                        <div key={index} className="p-3 bg-destructive/5 border border-destructive/20 rounded-lg">
-                          <div className="flex items-start justify-between gap-4">
-                            <div>
-                              <p className="font-mono text-sm">
+                        <div key={index} className="p-3 sm:p-4 bg-destructive/5 border border-destructive/20 rounded-lg">
+                          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <p className="font-mono text-sm break-all">
                                 {error.method} {error.endpoint}
                               </p>
-                              <p className="text-sm text-destructive">{error.errorMessage}</p>
+                              <p className="text-sm text-destructive mt-1">{error.errorMessage}</p>
                             </div>
-                            <div className="text-right">
-                              <Badge variant="destructive">{error.statusCode || 'Network Error'}</Badge>
-                              <p className="text-xs text-muted-foreground mt-1">
+                            <div className="text-right flex-shrink-0">
+                              <Badge variant="destructive" className="mb-1">{error.statusCode || 'Network Error'}</Badge>
+                              <p className="text-xs text-muted-foreground">
                                 {new Date(error.timestamp).toLocaleTimeString()}
                               </p>
                             </div>
@@ -705,7 +864,7 @@ export default function MonitoringDashboard() {
             </Card>
 
             {/* Web Vitals */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium">LCP</CardTitle>
@@ -800,10 +959,10 @@ export default function MonitoringDashboard() {
                   <CardDescription>Page load phases in milliseconds</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3 sm:gap-4">
                     {Object.entries(navTiming).map(([key, value]) => (
-                      <div key={key} className="text-center p-3 bg-muted/50 rounded-lg">
-                        <div className="text-lg font-semibold">{value}ms</div>
+                      <div key={key} className="text-center p-3 bg-muted/50 rounded-lg space-y-1">
+                        <div className="text-base sm:text-lg font-semibold">{value}ms</div>
                         <div className="text-xs text-muted-foreground capitalize">{key}</div>
                       </div>
                     ))}
@@ -819,18 +978,18 @@ export default function MonitoringDashboard() {
                 <CardDescription>Resources that took longest to load</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {resourceTimings.length === 0 ? (
                     <p className="text-muted-foreground text-center py-4">No resource timings available</p>
                   ) : (
                     resourceTimings.map((r, i) => (
-                      <div key={i} className="flex items-center justify-between p-2 bg-muted/50 rounded">
+                      <div key={i} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-muted/50 rounded gap-2">
                         <div className="flex items-center gap-2 flex-1 min-w-0">
                           <Badge variant="outline" className="shrink-0">{r.type}</Badge>
                           <span className="text-sm truncate">{r.name}</span>
                           {r.cached && <Badge variant="secondary" className="shrink-0">cached</Badge>}
                         </div>
-                        <span className="font-mono text-sm ml-2">{r.duration}ms</span>
+                        <span className="font-mono text-sm ml-2 flex-shrink-0">{r.duration}ms</span>
                       </div>
                     ))
                   )}
@@ -867,8 +1026,27 @@ export default function MonitoringDashboard() {
               </CardContent>
             </Card>
           </TabsContent>
-        </Tabs>
+
+          {/* Resources Tab */}
+          <TabsContent value="resources" className="space-y-4">
+            <ResourceMonitor />
+          </TabsContent>
+
+          {/* Security Tab */}
+          <TabsContent value="security" className="space-y-4">
+            <SecurityTestPanel />
+            <PenetrationTestPanel />
+          </TabsContent>
+
+          {/* Backup & Recovery Tab */}
+          <TabsContent value="backup" className="space-y-4">
+            <BackupRecoveryDashboard />
+          </TabsContent>
+          </Tabs>
+        </div>
+          </div>
+        </main>
       </div>
-    </div>
+    </>
   );
 }

@@ -2,7 +2,7 @@ import { useTheme } from "next-themes";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { Monitor, Sun, Moon, Eye } from "lucide-react";
+import { Monitor, Sun, Moon, Eye, Palette } from "lucide-react";
 
 export function ThemeSelector() {
   const { theme, setTheme } = useTheme();
@@ -25,6 +25,12 @@ export function ThemeSelector() {
       label: "Dark",
       description: "Dark theme with black background",
       icon: Moon,
+    },
+    {
+      id: "theme-colorful",
+      label: "Colorful",
+      description: "Fun theme with pink and yellow colors",
+      icon: Palette,
     },
     {
       id: "colorblind",

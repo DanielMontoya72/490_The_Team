@@ -178,11 +178,35 @@ export default function LinkedInIntegration() {
       </Card>
 
       <Tabs defaultValue="optimization" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="optimization">Profile Optimization</TabsTrigger>
-          <TabsTrigger value="templates">Message Templates</TabsTrigger>
-          <TabsTrigger value="strategies">Networking Strategies</TabsTrigger>
-          <TabsTrigger value="campaigns">Campaign Templates</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto p-1 bg-muted/50 rounded-lg gap-1">
+          <TabsTrigger 
+            value="optimization" 
+            className="text-xs sm:text-sm px-2 py-2 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-md transition-all"
+          >
+            <span className="hidden sm:inline">Profile Optimization</span>
+            <span className="sm:hidden">Profile</span>
+          </TabsTrigger>
+          <TabsTrigger 
+            value="templates" 
+            className="text-xs sm:text-sm px-2 py-2 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-md transition-all"
+          >
+            <span className="hidden sm:inline">Message Templates</span>
+            <span className="sm:hidden">Templates</span>
+          </TabsTrigger>
+          <TabsTrigger 
+            value="strategies" 
+            className="text-xs sm:text-sm px-2 py-2 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-md transition-all"
+          >
+            <span className="hidden sm:inline">Networking Strategies</span>
+            <span className="sm:hidden">Strategies</span>
+          </TabsTrigger>
+          <TabsTrigger 
+            value="campaigns" 
+            className="text-xs sm:text-sm px-2 py-2 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-md transition-all"
+          >
+            <span className="hidden sm:inline">Campaign Templates</span>
+            <span className="sm:hidden">Campaigns</span>
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="optimization" className="space-y-4">

@@ -92,9 +92,9 @@ export function ApplicationGapsDetector() {
       if (gap.pendingId) {
         await supabase
           .from("pending_application_imports")
-          .update({ 
-            import_status: "approved",
-            matched_job_id: newJob.id
+          .update({
+            status: "approved",
+            matched_job_id: newJob.id,
           })
           .eq("id", gap.pendingId);
       }

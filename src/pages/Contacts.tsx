@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { AppNav } from "@/components/layout/AppNav";
+import { ContactSidebar } from "@/components/layout/ContactSidebar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProfessionalContactsManager } from "@/components/jobs/ProfessionalContactsManager";
 import { ContactDiscovery } from "@/components/contacts/ContactDiscovery";
@@ -10,18 +12,34 @@ import InformationalInterviewManager from "@/components/contacts/InformationalIn
 import { Users, Sparkles, Calendar, Bell, Linkedin, Coffee } from "lucide-react";
 
 export default function Contacts() {
-  const [activeTab, setActiveTab] = useState("contacts");
+  const [searchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || "contacts");
+
+  // Update activeTab when URL parameter changes
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab) {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
 
   return (
-    <div className="min-h-screen bg-background">
+    <>
       <AppNav />
-      <div className="container mx-auto py-8 px-4">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">Professional Network</h1>
-          <p className="text-muted-foreground">
-            Manage contacts, discover strategic connections, and find networking opportunities
-          </p>
-        </div>
+      
+      <div className="flex min-h-screen bg-background pt-16">
+        <ContactSidebar activeTab={activeTab} onTabChange={setActiveTab} />
+        
+        {/* Main Content */}
+        <main className="flex-1 overflow-x-hidden lg:ml-56">
+          <div className="h-full overflow-y-auto">
+            <div className="container mx-auto px-4 py-8 max-w-7xl lg:pt-0 pt-16">
+              <div className="mb-8">
+                <h1 className="text-4xl font-bold mb-2">Professional Network</h1>
+                <p className="text-muted-foreground">
+                  Manage contacts, discover strategic connections, and find networking opportunities
+                </p>
+              </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-5 mb-8">
@@ -66,8 +84,11 @@ export default function Contacts() {
           <TabsContent value="interviews">
             <InformationalInterviewManager />
           </TabsContent>
-        </Tabs>
+              </Tabs>
+            </div>
+          </div>
+        </main>
       </div>
-    </div>
+    </>
   );
 }

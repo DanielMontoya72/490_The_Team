@@ -65,8 +65,9 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error('Failed to generate reset token');
     }
 
-    // Build reset URL
-    const resetUrl = `${req.headers.get('origin') || 'http://localhost:8080'}/reset-password?token=${token}`;
+    // Build reset URL using APP_URL environment variable
+    const appUrl = (Deno.env.get('APP_URL') || 'http://localhost:8080').replace(/\/+$/, '');
+    const resetUrl = `${appUrl}/reset-password?token=${token}`;
 
     // Configure SMTP client
     const smtpHost = Deno.env.get('SMTP_HOST')!;

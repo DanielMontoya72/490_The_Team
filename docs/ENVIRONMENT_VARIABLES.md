@@ -7,7 +7,7 @@ Create a `.env.local` file in the project root with these variables:
 | Variable | Purpose | Example |
 |----------|---------|---------|
 | `VITE_SUPABASE_URL` | Supabase project URL | `https://yourproject.supabase.co` |
-| `VITE_SUPABASE_PUBLISHABLE_KEY` | Supabase anon key | `eyJhbGciOiJIUzI1NiIs...` |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | Supabase anon key | `sb_publishable_...` |
 
 For Vercel deployment, add these in Project Settings → Environment Variables.
 

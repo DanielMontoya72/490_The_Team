@@ -41,7 +41,7 @@ JobQuest uses environment variables to configure behavior across development, st
 | Variable | Description | Example |
 |----------|-------------|---------|
 | `VITE_SUPABASE_URL` | Supabase project URL | `https://xxx.supabase.co` |
-| `VITE_SUPABASE_PUBLISHABLE_KEY` | Supabase anon key | `eyJhbG...` |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | Supabase anon key | `sb_publishable_...` |
 
 ### Optional Variables
 

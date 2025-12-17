@@ -15,7 +15,7 @@
           </elementProp>
           <elementProp name="SUPABASE_ANON_KEY" elementType="Argument">
             <stringProp name="Argument.name">SUPABASE_ANON_KEY</stringProp>
-            <stringProp name="Argument.value">${__P(supabase.anon.key,eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFmbGVzZHVlbGd5ZXNxZHFidmtiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIwMjE1NDksImV4cCI6MjA3NzU5NzU0OX0.cXcAcYXSRfDHuqrkelhMq6FdJFYukzGZWUAa7xs8K08)}</stringProp>
+            <stringProp name="Argument.value">${__P(supabase.anon.key,sb_publishable_0EXs4MWozA-ET2rvMNJj2w_LyTdezYY)}</stringProp>
             <stringProp name="Argument.metadata">=</stringProp>
           </elementProp>
           <elementProp name="TEST_EMAIL" elementType="Argument">

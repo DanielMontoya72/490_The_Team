@@ -26,13 +26,7 @@ export default defineConfig(({ mode }) => ({
     cssCodeSplit: true,
     chunkSizeWarningLimit: 1000,
     rollupOptions: {
-      // Tree shake unused code more aggressively
-      treeshake: {
-        preset: 'recommended',
-        moduleSideEffects: false,
-        propertyReadSideEffects: false,
-        unknownGlobalSideEffects: false,
-      },
+      // Use default tree shaking (aggressive settings were breaking CSS/side effects)
     },
     // Additional esbuild minification options
     esbuild: {

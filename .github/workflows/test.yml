@@ -42,10 +42,18 @@ jobs:
       run: npm run lint --if-present
       continue-on-error: true
     
-    - name: Run unit tests with coverage
+    # Run tests without coverage on Node 18.x (node:inspector/promises not available)
+    - name: Run unit tests (Node 18.x)
+      if: matrix.node-version == '18.x'
+      run: npm test
+    
+    # Run tests with coverage on Node 20.x
+    - name: Run unit tests with coverage (Node 20.x)
+      if: matrix.node-version == '20.x'
       run: npm run test:coverage
     
     - name: Upload coverage to Codecov
+      if: matrix.node-version == '20.x'
       uses: codecov/codecov-action@v4
       with:
         files: ./coverage/coverage-final.json
@@ -63,6 +71,7 @@ jobs:
           test-results/
     
     - name: Check coverage threshold (90%)
+      if: matrix.node-version == '20.x'
       run: |
         if [ -f coverage/coverage-summary.json ]; then
           COVERAGE=$(cat coverage/coverage-summary.json | jq '.total.lines.pct')

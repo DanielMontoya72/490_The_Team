@@ -59,7 +59,7 @@ const Dashboard = () => {
     enabled: !!session?.user?.id,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('profiles')
+        .from('user_profiles')
         .select('first_name, last_name, phone, location, about_me')
         .eq('id', session.user.id)
         .single();

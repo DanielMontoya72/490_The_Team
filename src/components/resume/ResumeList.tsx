@@ -118,8 +118,39 @@ export const ResumeList = ({
   const [sourceResumeForVersion, setSourceResumeForVersion] = useState<Resume | null>(null);
   const [compareResumeId, setCompareResumeId] = useState<string | null>(null);
   // (Removed duplicate showArchived state declaration)
+  
+  // Show loading state while fetching resumes
+  if (loading) {
+    return (
+      <div className="text-center py-12">
+        <div className="h-16 w-16 mx-auto mb-4 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+        <p className="text-muted-foreground">Loading resumes...</p>
+      </div>
+    );
+  }
+  
   return (
     <>
+      {/* Template Picker Sheet - Always render so it's available for empty state */}
+      <Sheet open={showTemplateDialog} onOpenChange={setShowTemplateDialog}>
+        <SheetContent side="right" className="w-full max-w-[1600px] xl:max-w-[1800px] 2xl:max-w-[2000px] p-10 overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>Choose a Resume Template</SheetTitle>
+            <SheetDescription>
+              Select a template style to start your new resume. You can change the color and layout later.
+            </SheetDescription>
+          </SheetHeader>
+          <div className="mb-6">
+            <ResumeTemplatesShowcase
+              onSelectTemplate={(template) => {
+                setShowTemplateDialog(false);
+                onCreateNew({ template, jobId: "" });
+              }}
+            />
+          </div>
+        </SheetContent>
+      </Sheet>
+      
       {resumes.length === 0 ? (
         <div className="text-center py-12">
           <FileText className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
@@ -160,34 +191,12 @@ export const ResumeList = ({
             </div>
           </div>
           {!showArchived && (
-            <>
-              <div className="flex justify-center">
-                <Button onClick={() => setShowTemplateDialog(true)} size="lg">
-                  <Plus className="h-4 w-4 mr-2" />
-                  New Resume
-                </Button>
-              </div>
-              {/* Template Picker Sheet */}
-              <Sheet open={showTemplateDialog} onOpenChange={setShowTemplateDialog}>
-                <SheetContent side="right" className="w-full max-w-[1600px] xl:max-w-[1800px] 2xl:max-w-[2000px] p-10 overflow-y-auto">
-                  <SheetHeader>
-                    <SheetTitle>Choose a Resume Template</SheetTitle>
-                    <SheetDescription>
-                      Select a template style to start your new resume. You can change the color and layout later.
-                    </SheetDescription>
-                  </SheetHeader>
-                  <div className="mb-6">
-                    <ResumeTemplatesShowcase
-                      onSelectTemplate={(template) => {
-                        setShowTemplateDialog(false);
-                        onCreateNew({ template, jobId: "" });
-                      }}
-                    />
-                  </div>
-                  {/* Removed job selection and extra confirmation. User is taken directly to editor on template click. */}
-                </SheetContent>
-              </Sheet>
-            </>
+            <div className="flex justify-center">
+              <Button onClick={() => setShowTemplateDialog(true)} size="lg">
+                <Plus className="h-4 w-4 mr-2" />
+                New Resume
+              </Button>
+            </div>
           )}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {resumes.map((resume) => (

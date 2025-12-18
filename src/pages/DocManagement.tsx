@@ -874,7 +874,7 @@ export default function DocManagement() {
                     <FileCheck className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
                     <p className="text-muted-foreground mb-4">No resumes yet</p>
                     <Button asChild>
-                      <a href="/resumes">Create Your First Resume</a>
+                      <Link to="/resumes">Create Your First Resume</Link>
                     </Button>
                   </div>
                 ) : (
@@ -951,7 +951,7 @@ export default function DocManagement() {
                     <Mail className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
                     <p className="text-muted-foreground mb-4">No cover letters yet</p>
                     <Button asChild>
-                      <a href="/cover-letters">Create Your First Cover Letter</a>
+                      <Link to="/cover-letters">Create Your First Cover Letter</Link>
                     </Button>
                   </div>
                 ) : (

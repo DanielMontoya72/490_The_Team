@@ -31,7 +31,7 @@ export const options = {
 };
 
 // Default to localhost for development
-const BASE_URL = __ENV.BASE_URL || 'http://localhost:8080';
+const BASE_URL = __ENV.BASE_URL || 'https://theats.it.com';
 
 // Connection check at startup
 export function setup() {

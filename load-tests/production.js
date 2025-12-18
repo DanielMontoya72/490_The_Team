@@ -43,7 +43,7 @@ const BASE_URL = __ENV.BASE_URL || '';
 export function setup() {
   if (!BASE_URL) {
     console.log('\n❌ ERROR: BASE_URL is required for production tests');
-    console.log('   Usage: k6 run -e BASE_URL=https://your-app.com load-tests/production.js');
+    console.log('   Usage: k6 run -e BASE_URL=https://theats.it.com load-tests/production.js');
     fail('BASE_URL not provided');
   }
   

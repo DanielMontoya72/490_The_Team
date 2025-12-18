@@ -1,12 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@/test/utils';
 import '@testing-library/jest-dom';
-import { BrowserRouter } from 'react-router-dom';
 import { TeamCard } from './TeamCard';
 
-const renderWithRouter = (component: React.ReactElement) => {
-  return render(<BrowserRouter>{component}</BrowserRouter>);
-};
+// Note: render from @/test/utils already wraps with BrowserRouter
 
 describe('TeamCard', () => {
   const mockTeam = {
@@ -33,25 +30,25 @@ describe('TeamCard', () => {
   };
 
   it('renders team name', () => {
-    renderWithRouter(<TeamCard team={mockTeam} onUpdate={vi.fn()} />);
+    render(<TeamCard team={mockTeam} onUpdate={vi.fn()} />);
 
     expect(screen.getByText('Engineering Team')).toBeInTheDocument();
   });
 
   it('displays team description', () => {
-    renderWithRouter(<TeamCard team={mockTeam} onUpdate={vi.fn()} />);
+    render(<TeamCard team={mockTeam} onUpdate={vi.fn()} />);
 
     expect(screen.getByText('Core engineering team')).toBeInTheDocument();
   });
 
   it('shows member count', () => {
-    renderWithRouter(<TeamCard team={mockTeam} onUpdate={vi.fn()} />);
+    render(<TeamCard team={mockTeam} onUpdate={vi.fn()} />);
 
     expect(screen.getByText(/3/)).toBeInTheDocument();
   });
 
   it('renders team with owner role', () => {
-    renderWithRouter(<TeamCard team={mockTeamWithOwner} onUpdate={vi.fn()} />);
+    render(<TeamCard team={mockTeamWithOwner} onUpdate={vi.fn()} />);
 
     expect(screen.getByText('Product Team')).toBeInTheDocument();
   });
@@ -65,7 +62,7 @@ describe('TeamCard', () => {
       team_members: [],
     };
 
-    renderWithRouter(<TeamCard team={emptyTeam} onUpdate={vi.fn()} />);
+    render(<TeamCard team={emptyTeam} onUpdate={vi.fn()} />);
 
     expect(screen.getByText('Empty Team')).toBeInTheDocument();
   });
@@ -79,7 +76,7 @@ describe('TeamCard', () => {
       team_members: [{ role: 'admin', user_id: 'user-1' }],
     };
 
-    renderWithRouter(<TeamCard team={noDescTeam} onUpdate={vi.fn()} />);
+    render(<TeamCard team={noDescTeam} onUpdate={vi.fn()} />);
 
     expect(screen.getByText('Simple Team')).toBeInTheDocument();
   });

@@ -1,15 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@/test/utils';
+import { render, screen } from '@/test/utils';
 import '@testing-library/jest-dom';
-import { BrowserRouter } from 'react-router-dom';
 import { DeadlineWidget } from './DeadlineWidget';
-import { supabase } from '@/integrations/supabase/client';
 
-vi.mock('@/integrations/supabase/client');
-
-const renderWithRouter = (component: React.ReactElement) => {
-  return render(<BrowserRouter>{component}</BrowserRouter>);
-};
+// Note: render from @/test/utils already wraps with BrowserRouter
 
 describe('DeadlineWidget', () => {
   const mockDeadlines = [
@@ -29,32 +23,23 @@ describe('DeadlineWidget', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-
-    vi.mocked(supabase.from).mockImplementation(() => ({
-      select: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      gte: vi.fn().mockReturnThis(),
-      order: vi.fn().mockReturnThis(),
-      limit: vi.fn().mockReturnThis(),
-      then: vi.fn((cb) => cb({ data: mockDeadlines, error: null })),
-    }));
   });
 
   it('renders upcoming deadlines', async () => {
-    renderWithRouter(<DeadlineWidget jobs={mockDeadlines} onViewJob={vi.fn()} />);
+    render(<DeadlineWidget jobs={mockDeadlines} onViewJob={vi.fn()} />);
 
     expect(screen.getByText(/upcoming deadlines/i)).toBeInTheDocument();
   });
 
   it('displays deadline jobs', async () => {
-    renderWithRouter(<DeadlineWidget jobs={mockDeadlines} onViewJob={vi.fn()} />);
+    render(<DeadlineWidget jobs={mockDeadlines} onViewJob={vi.fn()} />);
 
     expect(screen.getByText('Tech Corp')).toBeInTheDocument();
     expect(screen.getByText('StartupXYZ')).toBeInTheDocument();
   });
 
   it('handles no deadlines', async () => {
-    renderWithRouter(<DeadlineWidget jobs={[]} onViewJob={vi.fn()} />);
+    render(<DeadlineWidget jobs={[]} onViewJob={vi.fn()} />);
 
     expect(screen.getByText(/no upcoming deadlines/i)).toBeInTheDocument();
   });

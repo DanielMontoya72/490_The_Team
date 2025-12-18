@@ -2,12 +2,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@/test/utils';
 import '@testing-library/jest-dom';
 import userEvent from '@testing-library/user-event';
-import { BrowserRouter } from 'react-router-dom';
 import { JobSearchFilter } from './JobSearchFilter';
 
-const renderWithRouter = (component: React.ReactElement) => {
-  return render(<BrowserRouter>{component}</BrowserRouter>);
-};
+// Note: render from @/test/utils already wraps with BrowserRouter
 
 describe('JobSearchFilter', () => {
   beforeEach(() => {
@@ -15,14 +12,14 @@ describe('JobSearchFilter', () => {
   });
 
   it('renders search input', () => {
-    renderWithRouter(<JobSearchFilter onFilterChange={vi.fn()} onSearchChange={vi.fn()} />);
+    render(<JobSearchFilter onFilterChange={vi.fn()} onSearchChange={vi.fn()} />);
 
     expect(screen.getByPlaceholderText(/search/i)).toBeInTheDocument();
   });
 
   it('allows typing in search field', async () => {
     const user = userEvent.setup();
-    renderWithRouter(<JobSearchFilter onFilterChange={vi.fn()} onSearchChange={vi.fn()} />);
+    render(<JobSearchFilter onFilterChange={vi.fn()} onSearchChange={vi.fn()} />);
 
     const searchInput = screen.getByPlaceholderText(/search/i);
     await user.type(searchInput, 'Software Engineer');
@@ -31,7 +28,7 @@ describe('JobSearchFilter', () => {
   });
 
   it('shows filter button', () => {
-    renderWithRouter(<JobSearchFilter onFilterChange={vi.fn()} onSearchChange={vi.fn()} />);
+    render(<JobSearchFilter onFilterChange={vi.fn()} onSearchChange={vi.fn()} />);
 
     expect(screen.getByRole('button', { name: /filter/i })).toBeInTheDocument();
   });
@@ -39,7 +36,7 @@ describe('JobSearchFilter', () => {
   it('calls onSearchChange when search input changes', async () => {
     const user = userEvent.setup();
     const onSearchChange = vi.fn();
-    renderWithRouter(<JobSearchFilter onFilterChange={vi.fn()} onSearchChange={onSearchChange} />);
+    render(<JobSearchFilter onFilterChange={vi.fn()} onSearchChange={onSearchChange} />);
 
     const searchInput = screen.getByPlaceholderText(/search/i);
     await user.type(searchInput, 'Test');
@@ -51,7 +48,7 @@ describe('JobSearchFilter', () => {
 
   it('shows clear filters button when filters active', async () => {
     const user = userEvent.setup();
-    renderWithRouter(<JobSearchFilter onFilterChange={vi.fn()} onSearchChange={vi.fn()} />);
+    render(<JobSearchFilter onFilterChange={vi.fn()} onSearchChange={vi.fn()} />);
 
     const searchInput = screen.getByPlaceholderText(/search/i);
     await user.type(searchInput, 'Test');

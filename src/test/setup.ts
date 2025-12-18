@@ -87,15 +87,13 @@ vi.mock('@/integrations/supabase/client', () => ({
   },
 }));
 
-// Mock react-router-dom
+// Mock react-router-dom - keep BrowserRouter and routing context intact
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
   return {
     ...actual,
     useNavigate: () => vi.fn(),
-    Link: ({ children, to, ...props }: any) => 
-      React.createElement('a', { href: to, ...props }, children),
-    BrowserRouter: ({ children }: any) => 
-      React.createElement('div', null, children),
+    // Don't mock BrowserRouter - let it provide real routing context
+    // Don't mock useSearchParams - let it work with BrowserRouter
   };
 });

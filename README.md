@@ -1,6 +1,7 @@
 # The Team - Job Search Management Platform
 
 A comprehensive job search management platform built with React, TypeScript, and Supabase.
+By: Maria Angel Palacios, Anastasia Baylis, Massa Belal, Matthew O'Mara
 
 ## Features
 
@@ -92,3 +93,11 @@ See the `docs/` folder for:
 ## License
 
 MIT
+
+## AI Agent Credits
+Credits to the AI Agents that helped us build this application:
+GitHub CoPilot
+Claude Opus 4.5
+Google Gemini
+Cursor
+Lovable

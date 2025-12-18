@@ -25,7 +25,7 @@ k6 run load-tests/basic.js
 Override defaults with environment variables:
 
 ```bash
-k6 run -e BASE_URL=https://490-the-team.vercel.app load-tests/basic.js
+k6 run -e BASE_URL=https://theats.it.com load-tests/basic.js
 ```
 
 ## Documentation
